@@ -1,8 +1,7 @@
 import re
 import os
 
-from bdscan import globals
-from bdscan import classComponent
+from bdscan import globals, classComponent
 
 
 class NugetComponent(classComponent.Component):

@@ -4,8 +4,8 @@ import glob
 import json
 import os
 import sys
-from bdscan import globals
-from bdscan import classComponentList
+from bdscan import globals, classComponentList
+
 
 # from BlackDuckUtils import MavenUtils
 
@@ -83,7 +83,8 @@ def get_rapid_scan_results(output_dir, bd):
     return rapid_scan_results
 
 
-def process_rapid_scan(rapid_scan_data, incremental, baseline_comp_cache, bdio_graph, bdio_projects):
+# def process_rapid_scan(rapid_scan_data, incremental, baseline_comp_cache, bdio_graph, bdio_projects):
+def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
     import glob
     allpoms = glob.glob('**/pom.xml', recursive=True)
 
@@ -171,19 +172,18 @@ def process_rapid_scan(rapid_scan_data, incremental, baseline_comp_cache, bdio_g
                     linenum = -1
                     if projfile != '' and projfile is not None:
                         linenum = dircomp.get_projfile_linenum(projfile)
-                        if linenum <= 0:
-                            # direct component does not exist in this pomfile - skip this path
+                        if linenum > 0:
                             projfile_ok = True
-                            continue
 
                     if not projfile_ok:
                         for file in globals.detected_package_files:
                             linenum = dircomp.get_projfile_linenum(file)
                             if linenum > 0:
                                 projfile = file
+                                projfile_ok = True
                                 break
 
-                    if projfile != '':
+                    if projfile_ok:
                         direct_vulnerable_clist.set_data_in_comp(direct_dep, 'projfiles', projfile)
                         direct_vulnerable_clist.set_data_in_comp(direct_dep, 'projfilelines', linenum)
 

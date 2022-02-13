@@ -3,8 +3,7 @@ import os
 import tempfile
 import xml.etree.ElementTree as ET
 
-from bdscan import globals
-from bdscan import classComponent
+from bdscan import globals, classComponent
 
 
 class MyTreeBuilder(ET.TreeBuilder):

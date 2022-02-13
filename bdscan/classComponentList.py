@@ -6,11 +6,8 @@ import hashlib
 import sys
 import json
 
-from BlackDuckUtils import Utils
-from bdscan import classMavenComponent
 from bdscan import classNugetComponent
-from bdscan import classNpmComponent
-from bdscan import globals
+from bdscan import classMavenComponent, utils, globals, classNpmComponent, classComponent
 
 
 class ComponentList:
@@ -18,7 +15,7 @@ class ComponentList:
         "",
         "## SUMMARY Direct Dependencies with vulnerabilities:",
         "",
-        f"| Direct Dependency | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns "
+        f"| Direct Dependency | Changed | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns "
         f"| Max Indirect Vuln Severity | Upgrade to |",
         "| --- | --- | --- | --- | --- | --- |"
     ]
@@ -41,7 +38,8 @@ class ComponentList:
         elif ns == 'maven':
             component = classMavenComponent.MavenComponent(compid, arr[1], arr[2], arr[3], ns)
         else:
-            raise ValueError(f'Unsupported package manager {ns}')
+            component = classComponent.Component(compid, arr[1], arr[2], ns)
+            # raise ValueError(f'Unsupported package manager {ns}')
         self.components.append(component)
         self.compids.append(compid)
 
@@ -69,7 +67,7 @@ class ComponentList:
             comp.find_upgrade_versions(upgrade_major)
 
     def validate_upgrades(self):
-        detect_jar = Utils.get_detect_jar()
+        detect_jar = utils.get_detect_jar()
         bd_output_path = 'upgrade-tests'
 
         detect_connection_opts = [
@@ -115,13 +113,11 @@ class ComponentList:
             output = False
             if globals.debug > 0:
                 output = True
-            pvurl, projname, vername, retval = Utils.run_detect(detect_jar, detect_connection_opts, output)
+            pvurl, projname, vername, retval = utils.run_detect(detect_jar, detect_connection_opts, output)
 
             if retval == 3:
                 # Policy violation returned
-                rapid_scan_data, dep_dict, direct_deps_vuln = Utils.process_scan(
-                    bd_output_path, globals.bd, [], incremental=False, upgrade_indirect=False
-                )
+                rapid_scan_data, dep_dict, direct_deps_vuln = utils.process_scan(bd_output_path, globals.bd)
                 # process_scan(scan_folder, bd, baseline_comp_cache, incremental, upgrade_indirect):
 
                 last_vulnerable_dirdeps = []
@@ -172,7 +168,7 @@ class ComponentList:
     #         if package_file == 'Unknown' or package_line <= 0:
     #             # component doesn't exist in pkgfile - skip
     #             continue
-    #         package_file = Utils.remove_cwd_from_filename(package_file)
+    #         package_file = utils.remove_cwd_from_filename(package_file)
     #         if package_file not in comp.projfiles:
     #             comp.set_data('projfiles', package_file)
     #             comp.set_data('projfilelines', package_line)
@@ -349,10 +345,12 @@ class ComponentList:
 
         return
 
-    def get_comments(self):
+    def get_comments(self, incremental):
         md_comments = self.md_directdeps_header[:]
         md_comp_tables = []
         for comp in self.components:
+            if incremental and comp.inbaseline:
+                continue
             md_comments.extend(comp.md_summary_table_row())
             md_comp_tables.append(comp.md_table())
 

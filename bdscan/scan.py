@@ -7,32 +7,26 @@ import shutil
 
 from blackduck import Client
 
-from BlackDuckUtils import BlackDuckOutput
-from BlackDuckUtils import Utils
-from BlackDuckUtils import asyncdata as asyncdata
-
-from bdscan import globals
-from bdscan import github_workflow
+from bdscan import bdoutput, utils, globals, asyncdata as asyncdata, github_workflow
 
 
 def process_bd_scan(output):
     project_baseline_name, project_baseline_version, globals.detected_package_files = \
-        BlackDuckOutput.get_blackduck_status(output)
+        bdoutput.get_blackduck_status(output)
 
-    rapid_scan_data, dep_dict, direct_deps_to_upgrade = Utils.process_scan(
-        globals.args.output, globals.bd, globals.baseline_comp_cache, globals.args.incremental_results)
+    rapid_scan_data, dep_dict, direct_deps_to_upgrade = utils.process_scan(globals.args.output, globals.bd)
 
     if rapid_scan_data is None:
         return None, None, None
 
     # Look up baseline data
-    pvurl = Utils.get_projver(globals.bd, project_baseline_name, project_baseline_version)
+    pvurl = utils.get_projver(globals.bd, project_baseline_name, project_baseline_version)
     if pvurl == '':
         print(f"BD-Scan-Action: WARN: Unable to find project '{project_baseline_name}' \
 version '{project_baseline_version}' - cannot calculate incremental results")
     else:
         globals.printdebug(f"DEBUG: Project Version URL: {pvurl}")
-        baseline_comps = Utils.get_comps(globals.bd, pvurl)
+        baseline_comps = utils.get_comps(globals.bd, pvurl)
         direct_deps_to_upgrade.check_in_baselineproj(baseline_comps)
 
     return rapid_scan_data, dep_dict, direct_deps_to_upgrade
@@ -372,7 +366,7 @@ version '{project_baseline_version}' - cannot calculate incremental results")
 def main_process(output, runargs):
     # Run DETECT
     print(f"BD-Scan-Action: INFO: Running Black Duck detect with the following options: {runargs}")
-    pvurl, projname, vername, detect_return_code = Utils.run_detect(globals.detect_jar, runargs, True)
+    pvurl, projname, vername, detect_return_code = utils.run_detect(globals.detect_jar, runargs, True)
     if detect_return_code > 0 and detect_return_code != 3:
         print(f"BD-Scan-Action: ERROR: Black Duck detect returned exit code {detect_return_code}")
         sys.exit(detect_return_code)
@@ -417,6 +411,8 @@ def main_process(output, runargs):
         ok = False
         upgrade_count = 0
         for comp in direct_deps_to_upgrade.components:
+            if globals.args.incremental_results and comp.inbaseline:
+                continue
             if comp.goodupgrade != '':
                 upgrade_count += 1
                 if github_workflow.github_comp_fix_pr(comp):
@@ -433,7 +429,7 @@ def main_process(output, runargs):
     if globals.args.comment_on_pr:
         status_ok = True
         if len(direct_deps_to_upgrade.components) > 0:
-            comment = direct_deps_to_upgrade.get_comments()
+            comment = direct_deps_to_upgrade.get_comments(globals.args.incremental_results)
             if github_workflow.github_pr_comment(comment):
                 status_ok = False
                 print('BD-Scan-Action: Created comment on existing pull request')

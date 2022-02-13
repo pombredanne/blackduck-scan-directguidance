@@ -1,7 +1,6 @@
 # import json
 import os
 import sys
-from bdscan import globals
 import requests
 import semver
 # import tempfile
@@ -10,8 +9,7 @@ from pathlib import Path
 # from BlackDuckUtils import NpmUtils
 # from BlackDuckUtils import MavenUtils
 # from BlackDuckUtils import NugetUtils
-from BlackDuckUtils import bdio as bdio
-from BlackDuckUtils import BlackDuckOutput
+from bdscan import bdoutput, bdio, globals
 
 import subprocess
 
@@ -329,21 +327,21 @@ def normalise_version(ver):
     return tempver
 
 
-def process_scan(scan_folder, bd, baseline_comp_cache, incremental):
+def process_scan(scan_folder, bd):
     bdio_graph, bdio_projects = bdio.get_bdio_dependency_graph(scan_folder)
 
     if len(bdio_projects) == 0:
         print("BD-Scan-Action: ERROR: Unable to find base project in BDIO file")
         sys.exit(1)
 
-    rapid_scan_data = BlackDuckOutput.get_rapid_scan_results(scan_folder, bd)
+    rapid_scan_data = bdoutput.get_rapid_scan_results(scan_folder, bd)
 
     if rapid_scan_data is None or 'items' not in rapid_scan_data:
         return None, None, None
 
     # dep_dict, direct_deps_to_upgrade, pm = BlackDuckOutput.process_rapid_scan(rapid_scan_data['items'], incremental,
-    dep_dict, dirdeps_to_upgrade = BlackDuckOutput.process_rapid_scan(
-        rapid_scan_data['items'], incremental, baseline_comp_cache, bdio_graph, bdio_projects)
+    dep_dict, dirdeps_to_upgrade = bdoutput.process_rapid_scan(
+        rapid_scan_data['items'], bdio_graph, bdio_projects)
 
     # dirdeps_to_upgrade.check_projfiles()
     dirdeps_to_upgrade.get_children(dep_dict)

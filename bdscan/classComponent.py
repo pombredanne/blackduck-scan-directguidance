@@ -1,7 +1,9 @@
 import re
 import os
 
-from BlackDuckUtils import Utils
+from bdscan import utils
+
+
 # from bdscan import globals
 
 
@@ -81,13 +83,13 @@ class Component:
         return False
 
     def find_upgrade_versions(self, upgrade_major):
-        v_curr = Utils.normalise_version(self.version)
+        v_curr = utils.normalise_version(self.version)
         if v_curr is None:
             return
 
         future_vers = []
         for ver, url in self.versions[::-1]:
-            v_ver = Utils.normalise_version(ver)
+            v_ver = utils.normalise_version(ver)
             if v_ver is None:
                 continue
 
@@ -99,7 +101,7 @@ class Component:
             found_rels = [1000, -1, -1]
 
             for ver, url in verslist:
-                v_ver = Utils.normalise_version(ver)
+                v_ver = utils.normalise_version(ver)
                 if major < v_ver.major < found_rels[0]:
                     found_rels = [v_ver.major, v_ver.minor, v_ver.patch]
                     foundver = ver
@@ -115,8 +117,8 @@ class Component:
 
         #
         # Find the initial upgrade (either latest in current version major range or guidance_short)
-        v_guidance_short = Utils.normalise_version(self.upgradeguidance[0])
-        v_guidance_long = Utils.normalise_version(self.upgradeguidance[1])
+        v_guidance_short = utils.normalise_version(self.upgradeguidance[0])
+        v_guidance_long = utils.normalise_version(self.upgradeguidance[1])
         foundvers = []
         if v_guidance_short is None:
             # Find final version in current major range
@@ -172,7 +174,7 @@ class Component:
 
     def longtext(self):
         shorttext = self.shorttext()
-        md_comp_vulns_table = self.md_table()
+        # md_comp_vulns_table = self.md_table()
         if len(self.vulns) > 0 and len(self.childvulns) > 0:
             longtext = f"{shorttext}\n\nList of direct vulnerabilities:\n{','.join(self.vulns.keys())}\n\n" \
                        f"List of indirect vulnerabilities:\n{','.join(self.childvulns.keys())} "
@@ -199,11 +201,11 @@ class Component:
         projfile = urllib.parse.unquote(arr[3])
         if os.path.isfile(projfile):
             print(f'BD-Scan-Action: INFO: Found project file {projfile}')
-            return Utils.remove_cwd_from_filename(projfile)
+            return utils.remove_cwd_from_filename(projfile)
 
     def get_projfile_linenum(self, filename):
         # if comp_ns == 'maven':
-        #     return MavenUtils.get_pom_line(comp, ver, filename)
+        #     return Mavenutils.get_pom_line(comp, ver, filename)
         # else:
         try:
             with open(filename, 'r') as f:
@@ -219,21 +221,25 @@ class Component:
     #         line = self.get_projfile_linenum(package_file)
     #         if line > 0:
     #             globals.printdebug(f"DEBUG: '{self.name}': PKG file'{package_file}' Line {line}")
-    #             return Utils.remove_cwd_from_filename(package_file), line
+    #             return utils.remove_cwd_from_filename(package_file), line
     #     return "Unknown", 0
 
     def md_summary_table_row(self):
-        # | Direct Dependency | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns
+        # | Direct Dependency | Changed | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns
         # | Max Indirect Vuln Severity | Upgrade to |",
+        if self.inbaseline:
+            changed = 'No'
+        else:
+            changed = 'Yes'
         table = [
             f"{self.name}/{self.version}",
+            changed,
             f"{len(self.vulns.keys())}",
             f"{self.maxvulnscore}",
             f"{len(self.childvulns.keys())}",
             f"{self.maxchildvulnscore}",
             f"{self.goodupgrade}"
         ]
-
 
     @staticmethod
     def finalise_upgrade():
