@@ -1,0 +1,9 @@
+python3 setup.py sdist bdist_wheel
+pip3 install dist/*.whl
+
+docker build . -t name
+docker container run --name mycontainer -it tag /bin/bash
+
+GHGR:
+echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
+docker push ghcr.io/OWNER/IMAGE_NAME:latest

@@ -1,7 +1,7 @@
 import aiohttp
 import asyncio
 from bdscan import globals
-from BlackDuckUtils import Utils
+from bdscan import utils
 
 
 def get_data_async(dirdeps, bd, trustcert):
@@ -68,12 +68,12 @@ async def async_main(compidlist, bd, trustcert):
             arr = tempcompid.split('|')
             if len(comp.versions) == 0:
                 continue
-            curr_ver = Utils.normalise_version(arr[-1])
-            short_guidance_ver = Utils.normalise_version(comp.upgradeguidance[0])
+            curr_ver = utils.normalise_version(arr[-1])
+            short_guidance_ver = utils.normalise_version(comp.upgradeguidance[0])
             reduced_version_list[compid] = []
 
             for vers, versurl in all_versions[compid][::-1]:
-                n_ver = Utils.normalise_version(vers)
+                n_ver = utils.normalise_version(vers)
                 if n_ver is None:
                     continue
                 if curr_ver is not None:
@@ -94,7 +94,7 @@ async def async_main(compidlist, bd, trustcert):
                             continue
                 reduced_version_list[compid].append([vers, versurl])
 
-                origins_task = asyncio.ensure_future(async_get_origins(session, comp.compid, all_compdata,
+                origins_task = asyncio.ensure_future(async_get_origins(session, comp.compid,
                                                                        vers, versurl, token, trustcert))
                 origins_tasks.append(origins_task)
 
@@ -221,7 +221,7 @@ async def async_get_guidance(session, compid, compdata, token, trustcert):
     return compid, [short_term, long_term]
 
 
-async def async_get_origins(session, compid, compdata, ver, verurl, token, trustcert):
+async def async_get_origins(session, compid, ver, verurl, token, trustcert):
     if trustcert:
         ssl = False
     else:

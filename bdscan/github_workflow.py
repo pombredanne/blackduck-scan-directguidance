@@ -123,7 +123,7 @@ def github_comp_commit_file_and_create_fixpr(g, comp, files_to_patch):
     globals.printdebug(pr_body)
     pr = repo.create_pull(title=f"Black Duck: Upgrade {comp.name} to version "
                                 f"{comp.goodupgrade} fix known security vulerabilities",
-                          body=pr_body, head=new_branch_name, base="master")
+                                body=pr_body, head=new_branch_name, base="master")
     return True
 
 
@@ -369,21 +369,21 @@ def check_files_in_pull_request():
     pulls = repo.get_pulls(state='open', sort='created', base=repo.default_branch, direction="desc")
     pr = None
     pr_commit = None
-    if (globals.debug): print(f"DEBUG: Pull requests:")
+    if globals.debug: print(f"DEBUG: Pull requests:")
     pull_number_for_sha = 0
     for pull in pulls:
-        if (globals.debug): print(f"DEBUG: Pull request number: {pull.number}")
+        if globals.debug: print(f"DEBUG: Pull request number: {pull.number}")
         # Can we find the current commit sha?
         commits = pull.get_commits()
         for commit in commits.reversed:
-            if (globals.debug): print(f"DEBUG:   Commit sha: " + str(commit.sha))
-            if (commit.sha == github_sha):
-                if (globals.debug): print(f"DEBUG:     Found")
+            if globals.debug: print(f"DEBUG:   Commit sha: " + str(commit.sha))
+            if commit.sha == github_sha:
+                if globals.debug: print(f"DEBUG:     Found")
                 pull_number_for_sha = pull.number
                 pr = pull
                 pr_commit = commit
                 break
-        if (pull_number_for_sha != 0): break
+        if pull_number_for_sha != 0: break
 
     if pr_commit is None:
         print(f"ERROR: Unable to find pull request commits")

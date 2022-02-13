@@ -3,13 +3,14 @@
 import argparse
 import sys
 import os
-from bdscan import globals
 from bdscan import scan
+from bdscan import globals
 
 
 def main():
     # os.chdir('/Users/mbrad/working/duck_hub_ORI')
-    parser = argparse.ArgumentParser(description="Scan project to determine upgrades for vulnerable dirwct dependencies")
+    parser = argparse.ArgumentParser(
+        description="Scan project to determine upgrades for vulnerable dirwct dependencies")
     parser.add_argument('--debug', default=0, help='set debug level [0-9]')
     parser.add_argument("--url", required=True, type=str, help="Black Duck Hub URL")
     parser.add_argument("--token", required=True, type=str, help="Black Duck Hub Token")
@@ -26,9 +27,7 @@ def main():
                         help="Generate a comment on pull request, true or false")
     parser.add_argument("--sarif", type=str, help="SARIF output file")
     parser.add_argument("--incremental_results", default="false", type=str,
-                        help="Compare to previous intelligent scan project - only report new/changed components")
-    parser.add_argument("--upgrade_indirect", default="true", type=str,
-                        help="Attempt upgrade for vulnerable indirect dependencies by upgrading direct parents")
+                        help="Compare to previous intelligent scan project - only report & ix new/changed components")
     parser.add_argument("--detect_opts", type=str,
                         help="Passthrough options to Detect, comma delimited, exclude leading hyphens")
 
@@ -115,12 +114,12 @@ def main():
     #         globals.args.upgrade_indirect == '':
     #     globals.args.upgrade_indirect = False
     # elif str(globals.args.upgrade_indirect).lower() == 'true':
-    #     print('  --upgrade_indirect:    Calculate upgrades for direct dependencies to address indirect vulnerabilities')
+    #   print('  --upgrade_indirect:    Calculate upgrades for direct dependencies to address indirect vulnerabilities')
     #     globals.args.upgrade_indirect = True
     # else:
     #     globals.args.upgrade_indirect = False
     # Ignoring the upgrade_indirect setting as it is no longer useful
-    globals.args.upgrade_indirect = True
+    # globals.args.upgrade_indirect = True
 
     globals.debug = 0
     if globals.args.debug is not None and globals.args.debug != '':

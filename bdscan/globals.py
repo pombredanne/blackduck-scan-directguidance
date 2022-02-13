@@ -17,15 +17,15 @@ args = None
 pkg_files = ['pom.xml', 'package.json', 'npm-shrinkwrap.json', 'package-lock.json']
 
 pkg_exts = ['.csproj', '.fsproj', '.vbproj', '.asaproj', '.dcproj', '.shproj', '.ccproj', '.sfproj', '.njsproj',
-           '.vcxproj', '.vcproj', '.xproj', '.pyproj', '.hiveproj', '.pigproj', '.jsproj', '.usqlproj', '.deployproj',
-           '.msbuildproj', '.sqlproj', '.dbproj', '.rproj', '.sln']
+            '.vcxproj', '.vcproj', '.xproj', '.pyproj', '.hiveproj', '.pigproj', '.jsproj', '.usqlproj', '.deployproj',
+            '.msbuildproj', '.sqlproj', '.dbproj', '.rproj', '.sln']
 
-baseline_comp_cache = None
+# baseline_comp_cache = None
 bdio_graph = None
 bdio_projects = None
 rapid_scan_data = None
 detected_package_files = None
-comment_on_pr_comments = []
+# comment_on_pr_comments = []
 tool_rules = []
 results = []
 fix_pr_data = dict()
