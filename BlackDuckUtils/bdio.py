@@ -35,7 +35,7 @@ def bdio_read(bdio_in, inputdir):
     filelist = os.listdir(inputdir)
     for filename in filelist:
         # print ("processing {}".format(filename))
-        if (filename.startswith("bdio-entry")):
+        if filename.startswith("bdio-entry"):
             filepath_in = os.path.join(inputdir, filename)
             data = read_json_object(filepath_in)
             return data
@@ -44,12 +44,12 @@ def bdio_read(bdio_in, inputdir):
 def get_bdio_dependency_graph(output_dir):
     # Parse BDIO file into network graph
     bd_output_latest_dir = max(glob.glob(output_dir + "/runs/*/bdio"), key=os.path.getmtime)
-    if (len(bd_output_latest_dir) == 0):
+    if len(bd_output_latest_dir) == 0:
         print("BD-Scan-Action: ERROR: Unable to find latest scan folder: " + output_dir + "/runs/*/bdio")
         sys.exit(1)
 
     bd_rapid_output_bdio = glob.glob(bd_output_latest_dir + "/*.bdio")
-    if (len(bd_rapid_output_bdio) == 0):
+    if len(bd_rapid_output_bdio) == 0:
         print("BD-Scan-Action: ERROR: Unable to find output scan files in: " + output_dir + "/runs/*/bdio/*.bdio")
         sys.exit(1)
 
@@ -76,7 +76,7 @@ def get_bdio_dependency_graph(output_dir):
             nx_node = None
 
             if "https://blackducksoftware.github.io/bdio#hasDependency" in node:
-                if (isinstance(node['https://blackducksoftware.github.io/bdio#hasDependency'], list)):
+                if isinstance(node['https://blackducksoftware.github.io/bdio#hasDependency'], list):
                     for dependency in node['https://blackducksoftware.github.io/bdio#hasDependency']:
                         child = dependency['https://blackducksoftware.github.io/bdio#dependsOn']['@id']
                         # globals.printdebug(f"DEBUG:   Dependency on {child}")
@@ -98,7 +98,8 @@ def get_bdio_dependency_graph(output_dir):
 
 
 # def get_dependency_type(bdio_graph, bdio_projects, componentIdentifier):
-#     comp_ns, comp_name, comp_version = Utils.parse_component_id(componentIdentifier)    # Matching in the BDIO requires an http: prefix
+#     comp_ns, comp_name, comp_version = Utils.parse_component_id(componentIdentifier)
+# Matching in the BDIO requires an http: prefix
 #
 #     dependency_type = "Direct"
 #

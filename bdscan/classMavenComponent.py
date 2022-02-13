@@ -100,6 +100,9 @@ class MavenComponent(classComponent.Component):
         return True
 
     def get_projfile_linenum(self, filename):
+        if not filename.endswith('pom.xml'):
+            return -1
+
         def getline(comp, ver, filename):
             compstring = f"<artifactId>{comp}</artifactId>".lower()
             verstring = f"<version>{ver}</version>".lower()
@@ -202,7 +205,8 @@ class MavenComponent(classComponent.Component):
         try:
             with open('pom.xml', "a") as fp:
                 fp.write('''    </dependencies>
-</project>''')
+</project>
+''')
         except Exception as e:
             print(e)
         return

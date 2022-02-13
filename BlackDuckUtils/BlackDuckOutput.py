@@ -83,7 +83,7 @@ def get_rapid_scan_results(output_dir, bd):
     return rapid_scan_results
 
 
-def process_rapid_scan(rapid_scan_data, incremental, baseline_comp_cache, bdio_graph, bdio_projects, upgrade_indirect):
+def process_rapid_scan(rapid_scan_data, incremental, baseline_comp_cache, bdio_graph, bdio_projects):
     import glob
     allpoms = glob.glob('**/pom.xml', recursive=True)
 
@@ -109,20 +109,16 @@ def process_rapid_scan(rapid_scan_data, incremental, baseline_comp_cache, bdio_g
 
         # comp_ns, comp_name, comp_version = Utils.parse_component_id(item['componentIdentifier'])
 
-        # If comparing to baseline, look up in cache and continue if already exists
-        if incremental and item['componentName'] in baseline_comp_cache:
-            if (item['versionName'] in baseline_comp_cache[item['componentName']] and
-                    baseline_comp_cache[item['componentName']][item['versionName']] == 1):
-                globals.printdebug(f"DEBUG:   Skipping component {item['componentName']} \
-version {item['versionName']} because it was already seen in baseline")
-                continue
-            else:
-                globals.printdebug(f"DEBUG:   Including component {item['componentName']} \
-version {item['versionName']} because it was not seen in baseline")
-
-        # Track the root dependencies
-        # dependency_paths = []
-        # direct_ancestors = dict()
+#         # If comparing to baseline, look up in cache and continue if already exists
+#         if incremental and item['componentName'] in baseline_comp_cache:
+#             if (item['versionName'] in baseline_comp_cache[item['componentName']] and
+#                     baseline_comp_cache[item['componentName']][item['versionName']] == 1):
+#                 globals.printdebug(f"DEBUG:   Skipping component {item['componentName']} \
+# version {item['versionName']} because it was already seen in baseline")
+#                 continue
+#             else:
+#                 globals.printdebug(f"DEBUG:   Including component {item['componentName']} \
+# version {item['versionName']} because it was not seen in baseline")
 
         comp = allcomps_clist.add(item['componentIdentifier'])
 
@@ -144,9 +140,6 @@ version {item['versionName']} because it was not seen in baseline")
             dep_paths = nx.all_simple_paths(bdio_graph, source=proj, target=http_name)
             globals.printdebug(f"DEBUG: Paths to '{http_name}'")
             for path in dep_paths:
-                # First generate a string for easy output and reading
-                # path_modified.pop(0)
-
                 path_mod = []
                 i = 0
                 projfile = ''
@@ -174,12 +167,16 @@ version {item['versionName']} because it was not seen in baseline")
                 if direct_dep != '' and dep_vulnerable:
                     dircomp = direct_vulnerable_clist.add(direct_dep)
 
+                    projfile_ok = False
+                    linenum = -1
                     if projfile != '' and projfile is not None:
                         linenum = dircomp.get_projfile_linenum(projfile)
                         if linenum <= 0:
                             # direct component does not exist in this pomfile - skip this path
+                            projfile_ok = True
                             continue
-                    else:
+
+                    if not projfile_ok:
                         for file in globals.detected_package_files:
                             linenum = dircomp.get_projfile_linenum(file)
                             if linenum > 0:

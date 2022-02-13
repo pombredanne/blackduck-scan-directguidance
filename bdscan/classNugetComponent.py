@@ -1,6 +1,7 @@
 import re
 import os
 
+from bdscan import globals
 from bdscan import classComponent
 
 
@@ -27,7 +28,8 @@ class NugetComponent(classComponent.Component):
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
-  </PropertyGroup>'''
+  </PropertyGroup>
+'''
 
         proj_contents += f'''  <ItemGroup>
     <PackageReference Include="{self.name}" Version="{self.potentialupgrades[index]}" />
@@ -40,6 +42,20 @@ class NugetComponent(classComponent.Component):
             print(e)
             return False
         return True
+
+    def get_projfile_linenum(self, filename):
+        ext = filename.split('.')[-1]
+        if ext not in globals.pkg_exts:
+            return -1
+        namestring = f'Include="{self.name}"'.lower()
+        try:
+            with open(filename, 'r') as f:
+                for (i, line) in enumerate(f):
+                    if namestring in line.lower():
+                        return i
+        except Exception as e:
+            return -1
+        return -1
 
     @staticmethod
     def finalise_upgrade():

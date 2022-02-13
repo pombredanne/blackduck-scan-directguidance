@@ -1,9 +1,9 @@
-import json
+# import json
 import sys
-import hashlib
+# import hashlib
 import os
 import shutil
-from operator import itemgetter
+# from operator import itemgetter
 
 from blackduck import Client
 
@@ -20,8 +20,7 @@ def process_bd_scan(output):
         BlackDuckOutput.get_blackduck_status(output)
 
     rapid_scan_data, dep_dict, direct_deps_to_upgrade = Utils.process_scan(
-        globals.args.output, globals.bd, globals.baseline_comp_cache,
-        globals.args.incremental_results, globals.args.upgrade_indirect)
+        globals.args.output, globals.bd, globals.baseline_comp_cache, globals.args.incremental_results)
 
     if rapid_scan_data is None:
         return None, None, None
@@ -30,7 +29,7 @@ def process_bd_scan(output):
     pvurl = Utils.get_projver(globals.bd, project_baseline_name, project_baseline_version)
     if pvurl == '':
         print(f"BD-Scan-Action: WARN: Unable to find project '{project_baseline_name}' \
-version '{project_baseline_version}' - will not present incremental results")
+version '{project_baseline_version}' - cannot calculate incremental results")
     else:
         globals.printdebug(f"DEBUG: Project Version URL: {pvurl}")
         baseline_comps = Utils.get_comps(globals.bd, pvurl)
@@ -122,7 +121,7 @@ version '{project_baseline_version}' - will not present incremental results")
 #         for crow in cvulns_list:
 #             vscore = vuln_color(crow[3])
 #             # | Parent | Component | Vulnerability | Severity |  Policy | Description | Current Ver |
-#             cvulns_table.append(f"| {crow[0]} | {crow[1]} | {crow[2]} | {vscore} | {crow[4]} | {crow[5]} | {crow[6]} |")
+#          cvulns_table.append(f"| {crow[0]} | {crow[1]} | {crow[2]} | {vscore} | {crow[4]} | {crow[5]} | {crow[6]} |")
 #
 #         return existing_vulns, vuln_count, max_vuln_severity, cvulns_table
 #     #
@@ -226,18 +225,18 @@ version '{project_baseline_version}' - will not present incremental results")
 #         )
 #
 #         if dir_vuln_count > 0 and children_num_vulns > 0:
-#             shorttext = f"The direct dependency {comp_name}/{comp_version} has {dir_vuln_count} vulnerabilities (max " \
+#           shorttext = f"The direct dependency {comp_name}/{comp_version} has {dir_vuln_count} vulnerabilities (max " \
 #                         f"score {dir_max_sev}) and {children_num_vulns} vulnerabilities in child dependencies (max " \
 #                         f"score {children_max_sev})."
 #             longtext_md = shorttext + "\n\n" + '\n'.join(md_comp_vulns_table) + '\n'
 #             longtext = f"{shorttext}\n\nList of direct and indirect vulnerabilities:\n{','.join(dir_vulns)}"
 #         elif dir_vuln_count > 0 and children_num_vulns == 0:
-#             shorttext = f"The direct dependency {comp_name}/{comp_version} has {dir_vuln_count} vulnerabilities (max " \
+#           shorttext = f"The direct dependency {comp_name}/{comp_version} has {dir_vuln_count} vulnerabilities (max " \
 #                         f"score {dir_max_sev})."
 #             longtext_md = shorttext + "\n\n" + '\n'.join(md_comp_vulns_table) + '\n'
 #             longtext = f"{shorttext}\n\nList of direct vulnerabilities:\n{','.join(dir_vulns)}"
 #         elif children_num_vulns > 0:
-#             shorttext = f"The direct dependency {comp_name}/{comp_version} has {children_num_vulns} vulnerabilities " \
+#            shorttext = f"The direct dependency {comp_name}/{comp_version} has {children_num_vulns} vulnerabilities " \
 #                         f"in child dependencies (max score {children_max_sev})."
 #             longtext_md = shorttext + "\n\n" + '\n'.join(md_comp_vulns_table) + '\n'
 #             longtext = f"{shorttext}\n\nList of indirect vulnerabilities:\n{','.join(dir_vulns)}"
@@ -405,9 +404,9 @@ def main_process(output, runargs):
     # Work out possible upgrades
     globals.printdebug('BD-Scan-Action: Identifying upgrades ...')
 
+    direct_deps_to_upgrade.calc_vulns(rapid_scan_data)
     direct_deps_to_upgrade.find_upgrade_versions(globals.args.upgrade_major)
     direct_deps_to_upgrade.validate_upgrades()
-    direct_deps_to_upgrade.calc_vulns(rapid_scan_data)
 
     if globals.args.sarif is not None and globals.args.sarif != '':
         print(f"BD-Scan-Action: Writing sarif output file '{globals.args.sarif}' ...")
@@ -432,8 +431,8 @@ def main_process(output, runargs):
 
     # Optionally comment on the pull request this is for
     if globals.args.comment_on_pr:
+        status_ok = True
         if len(direct_deps_to_upgrade.components) > 0:
-            status_ok = True
             comment = direct_deps_to_upgrade.get_comments()
             if github_workflow.github_pr_comment(comment):
                 status_ok = False

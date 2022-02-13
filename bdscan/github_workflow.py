@@ -233,7 +233,7 @@ def github_comp_fix_pr(comp):
     return ret
 
 
-def github_pr_comment():
+def github_pr_comment(comment):
     globals.printdebug(f"DEBUG: Connect to GitHub at {globals.github_api_url}")
     g = Github(globals.github_token, base_url=globals.github_api_url)
 
@@ -285,7 +285,7 @@ def github_pr_comment():
     #
     # for comment in globals.comment_on_pr_comments:
     #     comments_markdown.append(comment)
-    comments_markdown = f"# {globals.comment_on_pr_header}\n" + "\n".join(globals.comment_on_pr_comments)
+    comments_markdown = f"# {globals.comment_on_pr_header}\n" + "\n".join(comment)
 
     if len(comments_markdown) > 65535:
         comments_markdown = comments_markdown[:65535]

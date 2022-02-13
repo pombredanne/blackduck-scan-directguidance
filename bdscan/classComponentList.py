@@ -208,13 +208,13 @@ class ComponentList:
 
                 for vuln in rscanitem['policyViolationVulnerabilities']:
                     # print(f"vuln={vuln}")
+                    parent_name = '-'
+                    parent_ver = '-'
                     if parent:
                         if vuln['name'] in existing_vulns:
                             continue
                         if max_vuln_severity < vuln['overallScore']:
                             max_vuln_severity = vuln['overallScore']
-                        parent_name = '-'
-                        parent_ver = '-'
                     elif child:
                         if vuln['name'] in existing_vulns_children:
                             continue
@@ -258,6 +258,11 @@ class ComponentList:
 
         for comp in self.components:
             # md_comp_vulns_table = comp.md_table()
+            projfile = ''
+            projfileline = 0
+            if len(comp.projfiles) > 0:
+                projfile = comp.projfiles[0]
+                projfileline = comp.projfilelines[0]
 
             sarif_result.append(
                 {
@@ -269,10 +274,10 @@ class ComponentList:
                         {
                             'physicalLocation': {
                                 'artifactLocation': {
-                                    'uri': comp.projfiles[0],
+                                    'uri': projfile,
                                 },
                                 'region': {
-                                    'startLine': comp.projfilelines[0],
+                                    'startLine': projfileline,
                                 }
                             }
                         }
@@ -355,5 +360,3 @@ class ComponentList:
         md_comments.extend(md_comp_tables)
 
         return md_comments
-
-

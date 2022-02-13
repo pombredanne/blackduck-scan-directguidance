@@ -2,7 +2,7 @@ import re
 import os
 
 from BlackDuckUtils import Utils
-from bdscan import globals
+# from bdscan import globals
 
 
 class Component:

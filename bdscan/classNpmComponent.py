@@ -41,6 +41,8 @@ class NpmComponent(classComponent.Component):
         return False
 
     def get_projfile_linenum(self, filename):
+        if not filename.endswith('package.json') and not filename.endswith('package_lock.json'):
+            return -1
         namestring = f'"{self.name.lower()}":'
         try:
             with open(filename, 'r') as f:
@@ -50,4 +52,3 @@ class NpmComponent(classComponent.Component):
         except Exception as e:
             return -1
         return -1
-
