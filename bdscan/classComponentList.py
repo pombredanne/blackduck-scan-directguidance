@@ -5,6 +5,7 @@ import tempfile
 import hashlib
 # import sys
 import json
+from operator import itemgetter
 
 from bdscan import classComponent, classNugetComponent, classNpmComponent, classMavenComponent
 from bdscan import utils, globals
@@ -14,7 +15,7 @@ class ComponentList:
     md_directdeps_header = \
         f"\n## SUMMARY Direct Dependencies with vulnerabilities:\n\n" \
         f"| Direct Dependency | Changed | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns | " \
-        f"Max Indirect Vuln Severity | Upgrade to |\n| --- | --- | --- | --- | --- | --- |\n"
+        f"Max Indirect Vuln Severity | Upgrade to |\n| --- | --- | --- | --- | --- | --- | --- |\n"
 
     def __init__(self):
         self.compids = []
@@ -224,6 +225,10 @@ class ComponentList:
                     link = f"{globals.args.url}/api/vulnerabilities/{name}/overview"
                     vulnname = f'<a href="{link}" target="_blank">{name}</a>'
 
+                    if comp.inbaseline:
+                        changed = 'No'
+                    else:
+                        changed = 'Yes'
                     vuln_item = [
                             f"{parent_name}/{parent_ver}",
                             f"{child_name}/{child_ver}",
@@ -231,6 +236,7 @@ class ComponentList:
                             str(vuln['overallScore']),
                             vuln['violatingPolicies'][0]['policyName'],
                             desc,
+                            changed
                         ]
                     if parent and vuln['name'] not in existing_vulns:
                         comp.add_vuln(name, vuln_item)
@@ -353,15 +359,17 @@ class ComponentList:
             if incremental and comp.inbaseline:
                 continue
             md_main_table.append(comp.md_summary_table_row())
-            md_comp_data_string += comp.md_table()
+            md_comp_data_string += f"### {comp.name}/{comp.version}\n\n" + comp.md_table()
 
         # Sort main table here
+        md_main_table = sorted(md_main_table, key=itemgetter(4), reverse=True)
+        md_main_table = sorted(md_main_table, key=itemgetter(6), reverse=True)
 
         sep = ' | '
         md_main_table_string = ''
         for row in md_main_table:
             md_main_table_string += '| ' + sep.join(row) + ' |\n'
         md_comments = self.md_directdeps_header + md_main_table_string + \
-                      '\n\nVulnerable Direct dependencies listed below:\n\n' + md_comp_data_string
+            '\n\nVulnerable Direct Dependencies listed below:\n\n' + md_comp_data_string
 
         return md_comments

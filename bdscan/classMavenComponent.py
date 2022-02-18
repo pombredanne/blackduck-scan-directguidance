@@ -1,6 +1,7 @@
 import re
 import os
 import tempfile
+import semver
 import xml.etree.ElementTree as ET
 
 from bdscan import globals, classComponent
@@ -224,3 +225,62 @@ class MavenComponent(classComponent.Component):
             return arr[1], arr[2], arr[3]
         else:
             return '', '', ''
+
+    @staticmethod
+    def normalise_version(ver):
+        #
+        # 0. Check for trailing string for pre-releases
+        # 1. Replace separator chars
+        # 2. Check number of segments
+        # 3. Normalise to 3 segments
+        tempver = ver.lower()
+
+        # Only accept specific qualifiers
+        # Ignore specific qualifiers
+        # for cstr in [
+        #     'alpha', 'beta', 'milestone', 'rc', 'cr', 'dev', 'nightly', 'snapshot', 'pre',
+        #     'branch', 'merge', 'tag', 'before', 'split', 'osgi', 'talend', 'redhat'
+        # ]:
+        #     if tempver.find(cstr) != -1:
+        #         return None
+        good = False
+        match = re.search("[_.-]\D+[-]*\d*$", tempver)
+        if match is not None:
+            # qualifier found - check it's a valid one
+            qual = match.group()[1:]
+            matchqual = re.search("final|ga", qual)
+            if matchqual is None:
+                return None
+
+        # Check for datestrings
+        match = re.search("20\d{6}|\d{4}20\d\d", tempver)
+        if match is not None:
+            return None
+
+        # Remove leading 'rel[_-]'
+        tempver = re.sub('^rel[_-]', '', tempver)
+        # Remove trailing '[_-]qualifier[0-9]'
+        tempver = re.sub('[_-]\D+\d*$', '', tempver)
+        # Replace _ and - with .
+        tempver = re.sub('[_-]', '.', tempver)
+
+        arr = tempver.split('.')
+        if len(arr) == 3:
+            newver = tempver
+        elif len(arr) == 0:
+            return None
+        elif len(arr) > 3:
+            newver = '.'.join(arr[0:3])
+        elif len(arr) == 2:
+            newver = '.'.join(arr[0:2]) + '.0'
+        elif len(arr) == 1:
+            newver = f'{arr[0]}.0.0'
+        else:
+            return None
+
+        try:
+            tempver = semver.VersionInfo.parse(newver)
+        except Exception as e:
+            return None
+
+        return tempver

@@ -1,16 +1,15 @@
 import re
 import os
+import semver
+from operator import itemgetter
 
 from bdscan import utils
 
 
-# from bdscan import globals
-
-
 class Component:
     md_comp_vulns_hdr = \
-        "\n| Parent | Child Component | Vulnerability | Score |  Policy Violated | Description | Current Ver |\n" \
-        "| --- | --- | --- | --- | --- | --- | --- |\n"
+        "\n| Parent | Child Component | Vulnerability | Score |  Policy Violated | Description | " \
+        "Direct Dep Changed |\n| --- | --- | --- | --- | --- | --- | --- |\n"
 
     def __init__(self, compid, name, version, ns):
         self.ns = ns
@@ -81,25 +80,25 @@ class Component:
         return False
 
     def find_upgrade_versions(self, upgrade_major):
-        v_curr = utils.normalise_version(self.version)
+        v_curr = self.normalise_version(self.version)
         if v_curr is None:
             return
 
         future_vers = []
         for ver, url in self.versions[::-1]:
-            v_ver = utils.normalise_version(ver)
+            v_ver = self.normalise_version(ver)
             if v_ver is None:
                 continue
 
             if self.check_ver_origin(ver):
                 future_vers.append([ver, url])
 
-        def find_next_ver(verslist, major, minor, patch):
+        def find_next_ver(comp, verslist, major, minor, patch):
             foundver = ''
             found_rels = [1000, -1, -1]
 
             for ver, url in verslist:
-                v_ver = utils.normalise_version(ver)
+                v_ver = comp.normalise_version(ver)
                 if major < v_ver.major < found_rels[0]:
                     found_rels = [v_ver.major, v_ver.minor, v_ver.patch]
                     foundver = ver
@@ -115,12 +114,12 @@ class Component:
 
         #
         # Find the initial upgrade (either latest in current version major range or guidance_short)
-        v_guidance_short = utils.normalise_version(self.upgradeguidance[0])
-        v_guidance_long = utils.normalise_version(self.upgradeguidance[1])
+        v_guidance_short = self.normalise_version(self.upgradeguidance[0])
+        v_guidance_long = self.normalise_version(self.upgradeguidance[1])
         foundvers = []
         if v_guidance_short is None:
             # Find final version in current major range
-            verstring, guidance_major_last = find_next_ver(future_vers, v_curr.major, v_curr.minor, v_curr.patch)
+            verstring, guidance_major_last = find_next_ver(self, future_vers, v_curr.major, v_curr.minor, v_curr.patch)
         else:
             verstring = self.upgradeguidance[0]
             guidance_major_last = v_guidance_short.major + 1
@@ -129,7 +128,7 @@ class Component:
 
         if v_guidance_long is None:
             # Find final minor version in next major range
-            verstring, guidance_major_last = find_next_ver(future_vers, guidance_major_last, -1, -1)
+            verstring, guidance_major_last = find_next_ver(self, future_vers, guidance_major_last, -1, -1)
         else:
             verstring = self.upgradeguidance[1]
             guidance_major_last = v_guidance_long.major
@@ -138,7 +137,7 @@ class Component:
 
         if upgrade_major:
             while len(foundvers) <= 3:
-                verstring, guidance_major_last = find_next_ver(future_vers, guidance_major_last + 1, -1, -1)
+                verstring, guidance_major_last = find_next_ver(self, future_vers, guidance_major_last + 1, -1, -1)
                 if verstring == '':
                     break
                 foundvers.append(verstring)
@@ -158,6 +157,7 @@ class Component:
             md_comp_vulns_table.append(self.childvulns[vulnid])
 
         # sort the table here
+        md_comp_vulns_table = sorted(md_comp_vulns_table, key=itemgetter(3), reverse=True)
 
         sep = ' | '
         md_table_string = ''
@@ -268,3 +268,42 @@ class Component:
             return arr[0], arr[1], arr[2]
         else:
             return '', '', ''
+
+    @staticmethod
+    def normalise_version(ver):
+        #
+        # 0. Check for training string for pre-releases
+        # 1. Replace separator chars
+        # 2. Check number of segments
+        # 3. Normalise to 3 segments
+        tempver = ver.lower()
+
+        # for cstr in [
+        #     'alpha', 'beta', 'milestone', 'rc', 'cr', 'dev', 'nightly', 'snapshot', 'preview', 'prerelease', 'pre'
+        # ]:
+        #     if tempver.find(cstr) != -1:
+        #         return None
+        match = re.search('alpha|beta|milestone|rc|cr|dev|nightly|snapshot|preview|prerelease|pre', tempver)
+        if match is not None:
+            return None
+
+        arr = tempver.split('.')
+        if len(arr) == 3:
+            newver = tempver
+        elif len(arr) == 0:
+            return None
+        elif len(arr) > 3:
+            newver = '.'.join(arr[0:3])
+        elif len(arr) == 2:
+            newver = '.'.join(arr[0:2]) + '.0'
+        elif len(arr) == 1:
+            newver = f'{arr[0]}.0.0'
+        else:
+            return None
+
+        try:
+            tempver = semver.VersionInfo.parse(newver)
+        except Exception as e:
+            return None
+
+        return tempver

@@ -68,12 +68,12 @@ async def async_main(compidlist, bd, trustcert):
             arr = tempcompid.split('|')
             if len(comp.versions) == 0:
                 continue
-            curr_ver = utils.normalise_version(arr[-1])
-            short_guidance_ver = utils.normalise_version(comp.upgradeguidance[0])
+            curr_ver = comp.normalise_version(arr[-1])
+            short_guidance_ver = comp.normalise_version(comp.upgradeguidance[0])
             reduced_version_list[compid] = []
 
             for vers, versurl in all_versions[compid][::-1]:
-                n_ver = utils.normalise_version(vers)
+                n_ver = comp.normalise_version(vers)
                 if n_ver is None:
                     continue
                 if curr_ver is not None:

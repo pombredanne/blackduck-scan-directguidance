@@ -293,40 +293,40 @@ synopsys-detect?properties=DETECT_LATEST_7"
 #         return ''
 
 
-def normalise_version(ver):
-    #
-    # 0. Check for training string for pre-releases
-    # 1. Replace separator chars
-    # 2. Check number of segments
-    # 3. Normalise to 3 segments
-    tempver = ver.lower()
-
-    for cstr in [
-        'alpha', 'beta', 'milestone', 'rc', 'cr', 'dev', 'nightly', 'snapshot', 'preview', 'prerelease', 'pre'
-    ]:
-        if tempver.find(cstr) != -1:
-            return None
-
-    arr = tempver.split('.')
-    if len(arr) == 3:
-        newver = tempver
-    elif len(arr) == 0:
-        return None
-    elif len(arr) > 3:
-        newver = '.'.join(arr[0:3])
-    elif len(arr) == 2:
-        newver = '.'.join(arr[0:2]) + '.0'
-    elif len(arr) == 1:
-        newver = f'{arr[0]}.0.0'
-    else:
-        return None
-
-    try:
-        tempver = semver.VersionInfo.parse(newver)
-    except Exception as e:
-        return None
-
-    return tempver
+# def normalise_version(ver):
+#     #
+#     # 0. Check for training string for pre-releases
+#     # 1. Replace separator chars
+#     # 2. Check number of segments
+#     # 3. Normalise to 3 segments
+#     tempver = ver.lower()
+#
+#     for cstr in [
+#         'alpha', 'beta', 'milestone', 'rc', 'cr', 'dev', 'nightly', 'snapshot', 'preview', 'prerelease', 'pre'
+#     ]:
+#         if tempver.find(cstr) != -1:
+#             return None
+#
+#     arr = tempver.split('.')
+#     if len(arr) == 3:
+#         newver = tempver
+#     elif len(arr) == 0:
+#         return None
+#     elif len(arr) > 3:
+#         newver = '.'.join(arr[0:3])
+#     elif len(arr) == 2:
+#         newver = '.'.join(arr[0:2]) + '.0'
+#     elif len(arr) == 1:
+#         newver = f'{arr[0]}.0.0'
+#     else:
+#         return None
+#
+#     try:
+#         tempver = semver.VersionInfo.parse(newver)
+#     except Exception as e:
+#         return None
+#
+#     return tempver
 
 
 def process_scan(scan_folder, bd):
