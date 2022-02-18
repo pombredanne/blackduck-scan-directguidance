@@ -12,11 +12,8 @@ RUN apt-get install -y python3-pip
 COPY dist/*.whl /root/dist/
 RUN pip3 install /root/dist/*.whl
 
-# Install npm
-RUN apt install -y npm
-
-# Install Java
-RUN apt install -y openjdk-8-jre-headless curl
+# Install npm & Java
+RUN apt install -y npm && apt install -y openjdk-8-jre-headless curl
 
 # Install Maven
 ARG MAVEN_VERSION=3.6.3
@@ -32,8 +29,7 @@ ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
 
 # Install Dotnet
 RUN curl https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb --output /tmp/packages-microsoft-prod.deb
-RUN dpkg -i /tmp/packages-microsoft-prod.deb
-RUN apt-get install -y libc6 libgcc1 libgssapi-krb5-2 libicu66 libssl1.1 libstdc++6 zlib1g
+RUN dpkg -i /tmp/packages-microsoft-prod.deb && apt-get install -y libc6 libgcc1 libgssapi-krb5-2 libicu66 libssl1.1 libstdc++6 zlib1g
 RUN apt-get update \
  && apt-get install -y apt-transport-https \
  && apt-get update \

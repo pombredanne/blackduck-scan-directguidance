@@ -1,21 +1,26 @@
 # [PROTOTYPE] Black Duck Scan Action
 A [GitHub Action](https://github.com/features/actions) for launching a Black Duck scan as part of a GitHub CI/CD workflow, offering a number of workflow use cases:
 - Break the build if a security policy is not met
-- Run fast, incremental scans on a pull request, only reporting newly introduced components
+- Run rapid, incremental scans on a pull request, optionally only reporting newly introduced components
 - Leave comments on a pull request that identify vulnerable components and offer upgrade guidance
 - Import Black Duck vulnerabilities as code scanning alerts via SARIF
-- Open a fix pull request for vulnerable components with an available upgrade
+- Open fix pull requests for vulnerable components with an available upgrade
 
 This script is provided under an OSS license (specified in the LICENSE file) and has been developed by Synopsys field engineers as a contribution to the Synopsys user community. Please direct questions and comments to the [Black Duck Integrations Forum](https://community.synopsys.com/s/topic/0TO34000000gGZnGAM/black-duck-integrations) in the Synopsys user community.
 
 The following technology stacks are currently supported:
 - Javascript.Node.js/NPM
 - Java/Maven
-- .NET/NuGet (in progress)
+- .NET/NuGet
 
 ## Usage
 
-The action runs as a Docker container, supporting GitHub-hosted and Self-hosted Linux runners. You can use the Action as follows:
+The action runs as a Docker container, supporting GitHub-hosted and Self-hosted Linux runners.
+
+The action has 3 independent modes of operation intended to be used for different GitHub activities:
+- Add a comment on a Pull Request 
+
+You can use the Action as follows:
 
 ```yaml
 name: Scan a project with Black Duck

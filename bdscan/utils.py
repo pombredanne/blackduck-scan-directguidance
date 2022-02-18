@@ -186,6 +186,8 @@ def get_projver(bd, projname, vername):
         versions = bd.get_resource('versions', parent=proj, params=params)
         for ver in versions:
             if ver['versionName'] == vername:
+                print(f"BD-Scan-Action: INFO: Project '{projname}' Version '{vername}' found - will compare against "
+                      f"this project")
                 return ver['_meta']['href']
     print(f"BD-Scan-Action: WARN: Version '{vername}' does not exist in project '{projname}' - will skip checking "
           f"previous full scan")

@@ -8,11 +8,9 @@ from bdscan import utils
 
 
 class Component:
-    md_comp_vulns_hdr = [
-        "",
-        "| Parent | Child Component | Vulnerability | Score |  Policy Violated | Description | Current Ver |",
-        "| --- | --- | --- | --- | --- | --- | --- |"
-    ]
+    md_comp_vulns_hdr = \
+        "\n| Parent | Child Component | Vulnerability | Score |  Policy Violated | Description | Current Ver |\n" \
+        "| --- | --- | --- | --- | --- | --- | --- |\n"
 
     def __init__(self, compid, name, version, ns):
         self.ns = ns
@@ -151,11 +149,23 @@ class Component:
         return
 
     def md_table(self):
-        md_comp_vulns_table = self.md_comp_vulns_hdr[:]
+        # md_comp_vulns_table = self.md_comp_vulns_hdr[:]
+        md_comp_vulns_table = []
         for vulnid in self.vulns.keys():
-            sep = " | "
-            md_comp_vulns_table.append('| ' + sep.join(self.vulns[vulnid]) + ' |')
-        return md_comp_vulns_table
+            md_comp_vulns_table.append(self.vulns[vulnid])
+        for vulnid in self.childvulns.keys():
+            # sep = " | "
+            md_comp_vulns_table.append(self.childvulns[vulnid])
+
+        # sort the table here
+
+        sep = ' | '
+        md_table_string = ''
+        for row in md_comp_vulns_table:
+            md_table_string += '| ' + sep.join(row) + ' |\n'
+
+        md_table_string = self.md_comp_vulns_hdr + md_table_string
+        return md_table_string
 
     def shorttext(self):
         if len(self.vulns) > 0 and len(self.childvulns) > 0:
@@ -188,8 +198,8 @@ class Component:
 
     def longtext_md(self):
         shorttext = self.shorttext()
-        md_comp_vulns_table = self.md_table()
-        longtext_md = shorttext + "\n\n" + '\n'.join(md_comp_vulns_table) + '\n'
+        md_table = self.md_table()
+        longtext_md = shorttext + "\n\n" + md_table
         return longtext_md
 
     def get_projfile(self, projstring, allpoms):
@@ -240,6 +250,12 @@ class Component:
             f"{self.maxchildvulnscore}",
             f"{self.goodupgrade}"
         ]
+        return table
+
+    def upgrade_dependency(self):
+        print(f'BD-Scan-Action: WARNING: Unable to upgrade component {self.name}/{self.version} - unsupported package '
+              f'manager')
+        return
 
     @staticmethod
     def finalise_upgrade():

@@ -32,14 +32,21 @@ class MavenComponent(classComponent.Component):
         # folder = folderarr[-2]
         folder = urllib.parse.unquote(folderarr[-2])
         farr = folder.split(os.path.sep)
-        if len(farr) > 0:
-            folder = farr[-2]
+        # 'http:maven/com.blackducksoftware.test/example-maven-travis/0.1.0-SNAPSHOT/example-maven-travis/maven'
+        # 'http:maven/com.blackducksoftware.test/example-maven-travis/0.1.0-SNAPSHOT/copilot-maven%2Fexample-maven-travis/maven'
+        if len(farr) > 1:
+            topfolder = farr[-2]
+        else:
+            topfolder = ''
         for pom in allpoms:
             arr = pom.split(os.path.sep)
-            if len(arr) >= 2 and arr[-2] == folder:
+            if len(arr) >= 2 and arr[-2] == topfolder:
                 if os.path.isfile(pom):
                     foundpom = pom
                     break
+            elif topfolder == '':
+                foundpom = pom
+                break
         return foundpom
 
     @staticmethod

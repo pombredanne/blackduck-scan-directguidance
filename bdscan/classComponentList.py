@@ -3,22 +3,18 @@ import os
 # import shutil
 import tempfile
 import hashlib
-import sys
+# import sys
 import json
 
-from bdscan import classNugetComponent
-from bdscan import classMavenComponent, utils, globals, classNpmComponent, classComponent
+from bdscan import classComponent, classNugetComponent, classNpmComponent, classMavenComponent
+from bdscan import utils, globals
 
 
 class ComponentList:
-    md_directdeps_header = [
-        "",
-        "## SUMMARY Direct Dependencies with vulnerabilities:",
-        "",
-        f"| Direct Dependency | Changed | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns "
-        f"| Max Indirect Vuln Severity | Upgrade to |",
-        "| --- | --- | --- | --- | --- | --- |"
-    ]
+    md_directdeps_header = \
+        f"\n## SUMMARY Direct Dependencies with vulnerabilities:\n\n" \
+        f"| Direct Dependency | Changed | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns | " \
+        f"Max Indirect Vuln Severity | Upgrade to |\n| --- | --- | --- | --- | --- | --- |\n"
 
     def __init__(self):
         self.compids = []
@@ -74,7 +70,7 @@ class ComponentList:
             f'--blackduck.url={globals.args.url}',
             f'--blackduck.api.token={globals.args.token}',
             "--detect.blackduck.scan.mode=RAPID",
-            "--detect.detector.buildless=true",
+            # "--detect.detector.buildless=true",
             # detect_connection_opts.append("--detect.maven.buildless.legacy.mode=false")
             f"--detect.output.path={bd_output_path}",
             "--detect.cleanup=false"
@@ -249,6 +245,12 @@ class ComponentList:
         return
 
     def write_sarif(self, sarif_file):
+        if os.path.exists(sarif_file):
+            os.remove(sarif_file)
+        if os.path.exists(sarif_file):
+            print(f'BD-Scan-Action: ERROR: Unable to write SARIF file {sarif_file}')
+            return False
+
         sarif_result = []
         sarif_tool_rule = []
 
@@ -341,20 +343,25 @@ class ComponentList:
                 json.dump(code_security_scan_report, fp, indent=4)
         except Exception as e:
             print(f"BD-Scan-Action: ERROR: Unable to write to SARIF output file '{sarif_file} - '" + str(e))
-            sys.exit(1)
-
-        return
+            return False
+        return True
 
     def get_comments(self, incremental):
-        md_comments = self.md_directdeps_header[:]
-        md_comp_tables = []
+        md_main_table = []
+        md_comp_data_string = ''
         for comp in self.components:
             if incremental and comp.inbaseline:
                 continue
-            md_comments.extend(comp.md_summary_table_row())
-            md_comp_tables.append(comp.md_table())
+            md_main_table.append(comp.md_summary_table_row())
+            md_comp_data_string += comp.md_table()
 
-        md_comments.append("\n\nVulnerable Direct dependencies listed below:\n\n")
-        md_comments.extend(md_comp_tables)
+        # Sort main table here
+
+        sep = ' | '
+        md_main_table_string = ''
+        for row in md_main_table:
+            md_main_table_string += '| ' + sep.join(row) + ' |\n'
+        md_comments = self.md_directdeps_header + md_main_table_string + \
+                      '\n\nVulnerable Direct dependencies listed below:\n\n' + md_comp_data_string
 
         return md_comments

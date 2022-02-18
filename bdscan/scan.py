@@ -364,6 +364,14 @@ version '{project_baseline_version}' - cannot calculate incremental results")
 
 
 def main_process(output, runargs):
+    globals.github_token = os.getenv("GITHUB_TOKEN")
+    globals.github_repo = os.getenv("GITHUB_REPOSITORY")
+    globals.github_ref = os.getenv("GITHUB_REF")
+    globals.printdebug(f'GITHUB_REF={globals.github_ref}')
+    globals.github_api_url = os.getenv("GITHUB_API_URL")
+    globals.github_sha = os.getenv("GITHUB_SHA")
+    globals.printdebug(f'GITHUB_SHA={globals.github_sha}')
+
     # Run DETECT
     print(f"BD-Scan-Action: INFO: Running Black Duck detect with the following options: {runargs}")
     pvurl, projname, vername, detect_return_code = utils.run_detect(globals.detect_jar, runargs, True)
@@ -373,6 +381,8 @@ def main_process(output, runargs):
 
     if globals.args.mode == "intelligent":
         # Stop here
+        print(f"BD-Scan-Action: Full/Intelligent scan performed - no further action")
+        print('BD-Scan-Action: Done - SUCCESS')
         sys.exit(0)
 
     # Todo - Add proxy support
@@ -383,6 +393,8 @@ def main_process(output, runargs):
 
     if globals.bd is None:
         print('BD-Scan-Action: ERROR: Unable to connect to Black Duck server - check credentials')
+        print('BD-Scan-Action: Done - ERROR')
+        sys.exit(1)
 
     # Process the Rapid scan
     print('\nBD-Scan-Action: Processing scan data ...')
@@ -390,6 +402,7 @@ def main_process(output, runargs):
 
     if rapid_scan_data is None:
         print('BD-Scan-Action: INFO: No policy violations found - Ending gracefully')
+        print('BD-Scan-Action: Done - SUCCESS')
         sys.exit(0)
 
     # Get component data via async calls
@@ -402,9 +415,10 @@ def main_process(output, runargs):
     direct_deps_to_upgrade.find_upgrade_versions(globals.args.upgrade_major)
     direct_deps_to_upgrade.validate_upgrades()
 
+    ret_status = True
     if globals.args.sarif is not None and globals.args.sarif != '':
         print(f"BD-Scan-Action: Writing sarif output file '{globals.args.sarif}' ...")
-        direct_deps_to_upgrade.write_sarif(globals.args.sarif)
+        ret_status = direct_deps_to_upgrade.write_sarif(globals.args.sarif)
 
     # generate Fix PR
     if globals.args.fix_pr:
@@ -422,6 +436,8 @@ def main_process(output, runargs):
         if ok:
             print(f'BD-Scan-Action: Created {upgrade_count} pull requests')
             github_workflow.github_set_commit_status(True)
+        else:
+            ret_status = False
         if upgrade_count == 0:
             print('BD-Scan-Action: No upgrades available for Fix PR - skipping')
 
@@ -435,7 +451,7 @@ def main_process(output, runargs):
                 print('BD-Scan-Action: Created comment on existing pull request')
             else:
                 print('BD-Scan-Action: ERROR: Unable to create comment on existing pull request')
-                sys.exit(1)
+                ret_status = False
         else:
             print('BD-Scan-Action: No upgrades available for Comment on PR - skipping')
         github_workflow.github_set_commit_status(status_ok)
@@ -444,5 +460,9 @@ def main_process(output, runargs):
         shutil.rmtree(globals.args.output, ignore_errors=False, onerror=None)
         print(f'BD-Scan-Action: INFO: Cleaning up folder {globals.args.output}')
 
-    print('BD-Scan-Action: Done - SUCCESS')
-    sys.exit(0)
+    if ret_status:
+        print('BD-Scan-Action: Done - SUCCESS')
+        sys.exit(0)
+    else:
+        print('BD-Scan-Action: Done - ERROR')
+        sys.exit(1)
