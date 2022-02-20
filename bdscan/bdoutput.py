@@ -77,7 +77,7 @@ def get_rapid_scan_results(output_dir, bd):
         raise
 
     # TODO: Handle error if can't read file
-    globals.printdebug("DEBUG: Developer scan data: " + json.dumps(rapid_scan_results, indent=4) + "\n")
+    # globals.printdebug("DEBUG: Developer scan data: " + json.dumps(rapid_scan_results, indent=4) + "\n")
     # print("DEBUG: Developer scan data: " + json.dumps(rapid_scan_results, indent=4) + "\n")
 
     return rapid_scan_results
@@ -145,7 +145,7 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
                 i = 0
                 projfile = ''
                 for p in path:
-                    if not p.endswith(f'/{comp.pm}') and not p.startswith('http:detect/'):
+                    if not p.endswith(f'/{comp.pm}') and not p.startswith('http:detect/') and not p == proj:
                         path_mod.append(p)
                     elif p.endswith(f'/{comp.pm}'):
                         projfile = comp.get_projfile(p, allpoms)
@@ -184,7 +184,7 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
                                 break
 
                     if projfile_ok:
-                        direct_vulnerable_clist.set_data_in_comp(direct_dep, 'projfiles', projfile)
-                        direct_vulnerable_clist.set_data_in_comp(direct_dep, 'projfilelines', linenum)
+                        if direct_vulnerable_clist.set_data_in_comp(direct_dep, 'projfiles', projfile):
+                            direct_vulnerable_clist.set_data_in_comp(direct_dep, 'projfilelines', linenum)
 
     return dep_dict, direct_vulnerable_clist

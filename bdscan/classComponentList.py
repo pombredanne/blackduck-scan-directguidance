@@ -3,22 +3,19 @@ import os
 # import shutil
 import tempfile
 import hashlib
-import sys
+# import sys
 import json
+from operator import itemgetter
 
-from bdscan import classNugetComponent
-from bdscan import classMavenComponent, utils, globals, classNpmComponent, classComponent
+from bdscan import classComponent, classNugetComponent, classNpmComponent, classMavenComponent
+from bdscan import utils, globals
 
 
 class ComponentList:
-    md_directdeps_header = [
-        "",
-        "## SUMMARY Direct Dependencies with vulnerabilities:",
-        "",
-        f"| Direct Dependency | Changed | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns "
-        f"| Max Indirect Vuln Severity | Upgrade to |",
-        "| --- | --- | --- | --- | --- | --- |"
-    ]
+    md_directdeps_header = \
+        f"\n## SUMMARY Direct Dependencies with vulnerabilities:\n\n" \
+        f"| Direct Dependency | Changed | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns | " \
+        f"Max Indirect Vuln Severity | Upgrade to |\n| --- | --- | --- | --- | --- | --- | --- |\n"
 
     def __init__(self):
         self.compids = []
@@ -74,7 +71,7 @@ class ComponentList:
             f'--blackduck.url={globals.args.url}',
             f'--blackduck.api.token={globals.args.token}',
             "--detect.blackduck.scan.mode=RAPID",
-            "--detect.detector.buildless=true",
+            # "--detect.detector.buildless=true",
             # detect_connection_opts.append("--detect.maven.buildless.legacy.mode=false")
             f"--detect.output.path={bd_output_path}",
             "--detect.cleanup=false"
@@ -102,17 +99,29 @@ class ComponentList:
                     if comp.prepare_upgrade(upgrade_index):
 
                         test_upgrade_list.append([comp.org, comp.name, comp.potentialupgrades[upgrade_index]])
+                        globals.printdebug(f"Will test upgrade {comp.name}/{comp.version} to "
+                                           f"{comp.potentialupgrades[upgrade_index]}")
                         test_origdeps_list.append(comp.compid)
 
+            if len(test_origdeps_list) == 0:
+                os.chdir(origdir)
+                dirname.cleanup()
+                upgrade_index += 1
+                continue
             pm_list = []
             for comp in self.components:
-                if comp.pm not in pm_list:
+                if comp.pm not in pm_list and comp.compid in test_origdeps_list:
                     pm_list.append(comp.pm)
                     comp.finalise_upgrade()
+
+            if len(pm_list) == 1 and pm_list[0] == 'maven' and \
+                    "--detect.detector.buildless=true" not in detect_connection_opts:
+                detect_connection_opts.append("--detect.detector.buildless=true")
 
             output = False
             if globals.debug > 0:
                 output = True
+
             pvurl, projname, vername, retval = utils.run_detect(detect_jar, detect_connection_opts, output)
 
             if retval == 3:
@@ -228,6 +237,10 @@ class ComponentList:
                     link = f"{globals.args.url}/api/vulnerabilities/{name}/overview"
                     vulnname = f'<a href="{link}" target="_blank">{name}</a>'
 
+                    if comp.inbaseline:
+                        changed = 'No'
+                    else:
+                        changed = 'Yes'
                     vuln_item = [
                             f"{parent_name}/{parent_ver}",
                             f"{child_name}/{child_ver}",
@@ -235,6 +248,7 @@ class ComponentList:
                             str(vuln['overallScore']),
                             vuln['violatingPolicies'][0]['policyName'],
                             desc,
+                            changed
                         ]
                     if parent and vuln['name'] not in existing_vulns:
                         comp.add_vuln(name, vuln_item)
@@ -249,15 +263,22 @@ class ComponentList:
         return
 
     def write_sarif(self, sarif_file):
+        if os.path.exists(sarif_file):
+            os.remove(sarif_file)
+        if os.path.exists(sarif_file):
+            print(f'BD-Scan-Action: ERROR: Unable to write SARIF file {sarif_file}')
+            return False
+
         sarif_result = []
         sarif_tool_rule = []
 
         for comp in self.components:
             # md_comp_vulns_table = comp.md_table()
             projfile = ''
-            projfileline = 0
+            projfileline = 1
             if len(comp.projfiles) > 0:
                 projfile = comp.projfiles[0]
+            if len(comp.projfilelines) > 0:
                 projfileline = comp.projfilelines[0]
 
             sarif_result.append(
@@ -341,20 +362,38 @@ class ComponentList:
                 json.dump(code_security_scan_report, fp, indent=4)
         except Exception as e:
             print(f"BD-Scan-Action: ERROR: Unable to write to SARIF output file '{sarif_file} - '" + str(e))
-            sys.exit(1)
-
-        return
+            return False
+        return True
 
     def get_comments(self, incremental):
-        md_comments = self.md_directdeps_header[:]
-        md_comp_tables = []
+        md_main_table = []
+        md_comp_data_string = ''
         for comp in self.components:
             if incremental and comp.inbaseline:
                 continue
-            md_comments.extend(comp.md_summary_table_row())
-            md_comp_tables.append(comp.md_table())
+            md_main_table.append(comp.md_summary_table_row())
+            md_comp_data_string += f"\n### {comp.name}/{comp.version}" + comp.md_table()
 
-        md_comments.append("\n\nVulnerable Direct dependencies listed below:\n\n")
-        md_comments.extend(md_comp_tables)
+        # Sort main table here
+        md_main_table = sorted(md_main_table, key=itemgetter(4), reverse=True)
+        md_main_table = sorted(md_main_table, key=itemgetter(6), reverse=True)
+
+        sep = ' | '
+        md_main_table_string = ''
+        for row in md_main_table:
+            md_main_table_string += '| ' + sep.join(row) + ' |\n'
+        md_comments = self.md_directdeps_header + md_main_table_string + \
+            '\n\nVulnerable Direct Dependencies listed below:\n\n' + md_comp_data_string
 
         return md_comments
+
+    def print_upgrade_summary(self):
+        print('\n------------------------------------------------------------------------------------')
+        print('SUMMARY UPGRADE GUIDANCE:')
+        for comp in self.components:
+            if comp.goodupgrade != '':
+                upg = f'Upgrade to {comp.goodupgrade}'
+            else:
+                upg = 'No Upgrade Available'
+            print(f'- {comp.name}/{comp.version}: {upg}')
+        print('------------------------------------------------------------------------------------\n')

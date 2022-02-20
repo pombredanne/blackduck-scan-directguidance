@@ -118,7 +118,7 @@ def github_comp_commit_file_and_create_fixpr(g, comp, files_to_patch):
               f"Upgrade {comp.name} from version {comp.version} to " \
               f"{comp.goodupgrade} in order to fix security vulnerabilities:\n\n"
 
-    pr_body = pr_body + "\n".join(comp.longtext_md())
+    pr_body = pr_body + comp.longtext_md
     globals.printdebug(f"DEBUG: Submitting pull request:")
     globals.printdebug(pr_body)
     pr = repo.create_pull(title=f"Black Duck: Upgrade {comp.name} to version "
@@ -222,7 +222,7 @@ def github_comp_fix_pr(comp):
                            f"'{comp.goodupgrade} as it is already present")
         return
 
-    files_to_patch = comp.upgrade_dependency()
+    files_to_patch = comp.do_upgrade_dependency()
 
     if len(files_to_patch) == 0:
         print('BD-Scan-Action: WARN: Unable to apply fix patch - cannot determine containing package file')
@@ -285,7 +285,7 @@ def github_pr_comment(comment):
     #
     # for comment in globals.comment_on_pr_comments:
     #     comments_markdown.append(comment)
-    comments_markdown = f"# {globals.comment_on_pr_header}\n" + "\n".join(comment)
+    comments_markdown = f"# {globals.comment_on_pr_header}\n{comment}"
 
     if len(comments_markdown) > 65535:
         comments_markdown = comments_markdown[:65535]

@@ -1,6 +1,7 @@
 import re
 import os
 import tempfile
+# import semver
 import xml.etree.ElementTree as ET
 
 from bdscan import globals, classComponent
@@ -32,14 +33,21 @@ class MavenComponent(classComponent.Component):
         # folder = folderarr[-2]
         folder = urllib.parse.unquote(folderarr[-2])
         farr = folder.split(os.path.sep)
-        if len(farr) > 0:
-            folder = farr[-2]
+        # 'http:maven/com.blackducksoftware.test/example-maven-travis/0.1.0-SNAPSHOT/example-maven-travis/maven'
+        # 'http:maven/com.blackducksoftware.test/example-maven-travis/0.1.0-SNAPSHOT/copilot-maven%2Fexample-maven-travis/maven'
+        if len(farr) > 1:
+            topfolder = farr[-2]
+        else:
+            topfolder = ''
         for pom in allpoms:
             arr = pom.split(os.path.sep)
-            if len(arr) >= 2 and arr[-2] == folder:
+            if len(arr) >= 2 and arr[-2] == topfolder:
                 if os.path.isfile(pom):
                     foundpom = pom
                     break
+            elif topfolder == '':
+                foundpom = pom
+                break
         return foundpom
 
     @staticmethod
@@ -55,8 +63,9 @@ class MavenComponent(classComponent.Component):
             for over in self.origins[ver]:
                 if 'originName' in over and 'originId' in over and over['originName'] == self.ns:
                     # 'org.springframework:spring-aop:3.2.10.RELEASE'
-                    a_over = over['originId'].split(':')
-                    if a_over[0] == self.org and a_over[1] == self.name and a_over[2] == self.version:
+                    corg, cname, cver = self.parse_compid(over['originId'])
+                    # a_over = over['originId'].split(':')
+                    if corg == self.org and cname == self.name:
                         return True
         return False
 
@@ -147,7 +156,7 @@ class MavenComponent(classComponent.Component):
 
         return -1
 
-    def upgrade_dependency(self):
+    def do_upgrade_dependency(self):
         files_to_patch = dict()
 
         # dirname = tempfile.TemporaryDirectory()
@@ -206,6 +215,7 @@ class MavenComponent(classComponent.Component):
                 fp.write('''    </dependencies>
 </project>
 ''')
+            # os.system('cat pom.xml')
         except Exception as e:
             print(e)
         return
@@ -216,4 +226,4 @@ class MavenComponent(classComponent.Component):
         if len(arr) == 4:
             return arr[1], arr[2], arr[3]
         else:
-            return '', '', ''
+            return arr[0], arr[1], arr[2]
