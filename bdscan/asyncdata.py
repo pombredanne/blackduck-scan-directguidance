@@ -1,25 +1,17 @@
 import aiohttp
 import asyncio
 from bdscan import globals
-from bdscan import utils
+# from bdscan import utils
 
 
 def get_data_async(dirdeps, bd, trustcert):
-    # def unique(list1):
-    #     unique_list = []
-    #     for x in list1:
-    #         # check if exists in unique_list or not
-    #         if x not in unique_list:
-    #             unique_list.append(x)
-    #     return unique_list
-    #
-    # return asyncio.run(async_main(unique(list(dirdeps.keys())), bd, trustcert))
     return asyncio.run(async_main(dirdeps, bd, trustcert))
 
 
 async def async_main(compidlist, bd, trustcert):
     token = bd.session.auth.bearer_token
 
+    # Get compids for components
     async with aiohttp.ClientSession() as session:
         compdata_tasks = []
 
@@ -35,6 +27,7 @@ async def async_main(compidlist, bd, trustcert):
         for compid in all_compdata.keys():
             compidlist.set_data_in_comp(compid, 'compdata', all_compdata[compid])
 
+    # Get upgradeguidance and lists of allversions
     async with aiohttp.ClientSession() as session:
         upgradeguidance_tasks = []
         versions_tasks = []
@@ -59,40 +52,26 @@ async def async_main(compidlist, bd, trustcert):
         globals.printdebug(f'got {len(all_upgradeguidance.keys())} all_upgradeguidances')
         globals.printdebug(f'got {len(all_versions.keys())} all_versions')
 
+    # Now get origin data - need to work out the subset of valid future versions to reduce requests
     async with aiohttp.ClientSession() as session:
         origins_tasks = []
 
-        reduced_version_list = {}
+        # reduced_version_list = {}
         for comp in compidlist.components:
-            tempcompid = comp.compid.replace(':', '|').replace('/', '|')
-            arr = tempcompid.split('|')
+            # c_org, c_name, c_ver = comp.parse_compid(comp.compid)
+            # tempcompid = comp.compid.replace(':', '|').replace('/', '|')
+            # arr = tempcompid.split('|')
             if len(comp.versions) == 0:
                 continue
-            curr_ver = comp.normalise_version(arr[-1])
-            short_guidance_ver = comp.normalise_version(comp.upgradeguidance[0])
-            reduced_version_list[compid] = []
+            # curr_ver = comp.check_version_is_release(c_ver)
+            # short_guidance_ver = comp.check_version_is_release(comp.upgradeguidance[0])
+            # reduced_version_list[compid] = []
 
-            for vers, versurl in all_versions[compid][::-1]:
-                n_ver = comp.normalise_version(vers)
-                if n_ver is None:
+            # for vers, versurl in all_versions[compid][::-1]:
+            for vers, versurl in comp.versions[::-1]:
+                if not comp.is_goodfutureversion(vers):
                     continue
-                if curr_ver is not None:
-                    if n_ver.major < curr_ver.major:
-                        continue
-                    elif n_ver.major == curr_ver.major:
-                        if n_ver.minor < curr_ver.minor:
-                            continue
-                        elif n_ver.minor == curr_ver.minor and n_ver.patch < curr_ver.patch:
-                            continue
-                if short_guidance_ver is not None:
-                    if n_ver.major < short_guidance_ver.major:
-                        continue
-                    elif n_ver.major == short_guidance_ver.major:
-                        if n_ver.minor < short_guidance_ver.minor:
-                            continue
-                        elif n_ver.minor == short_guidance_ver.minor and n_ver.patch < short_guidance_ver.patch:
-                            continue
-                reduced_version_list[compid].append([vers, versurl])
+                comp.set_data('goodfutureversions', [vers, versurl])
 
                 origins_task = asyncio.ensure_future(async_get_origins(session, comp.compid,
                                                                        vers, versurl, token, trustcert))
@@ -163,7 +142,7 @@ async def async_get_versions(session, compid, compdata, token, trustcert):
     }
 
     params = {
-        'limit': 200,
+        'limit': 1000,
         'sort': 'releasedOn',
     }
 
@@ -222,6 +201,7 @@ async def async_get_guidance(session, compid, compdata, token, trustcert):
 
 
 async def async_get_origins(session, compid, ver, verurl, token, trustcert):
+    globals.printdebug(f"{compid}: {ver} - {verurl}")
     if trustcert:
         ssl = False
     else:
@@ -231,12 +211,17 @@ async def async_get_origins(session, compid, ver, verurl, token, trustcert):
         'accept': "application/vnd.blackducksoftware.component-detail-5+json",
         'Authorization': f'Bearer {token}',
     }
+
+    params = {
+        'limit': 1000,
+    }
+
     # if 'componentIdentifier' in comp and comp['componentIdentifier'] in compdata:
     #     gurl = compdata[comp['componentIdentifier']][0]
     # else:
     #     return None, None
 
-    async with session.get(verurl + '/origins', headers=headers, ssl=ssl) as resp:
+    async with session.get(verurl + '/origins', headers=headers, params=params, ssl=ssl) as resp:
         origins = await resp.json()
 
     # print('get_origins:')

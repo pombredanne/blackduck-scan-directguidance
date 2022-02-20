@@ -1,7 +1,7 @@
 import re
 import os
 import tempfile
-import semver
+# import semver
 import xml.etree.ElementTree as ET
 
 from bdscan import globals, classComponent
@@ -63,8 +63,9 @@ class MavenComponent(classComponent.Component):
             for over in self.origins[ver]:
                 if 'originName' in over and 'originId' in over and over['originName'] == self.ns:
                     # 'org.springframework:spring-aop:3.2.10.RELEASE'
-                    a_over = over['originId'].split(':')
-                    if a_over[0] == self.org and a_over[1] == self.name and a_over[2] == self.version:
+                    corg, cname, cver = self.parse_compid(over['originId'])
+                    # a_over = over['originId'].split(':')
+                    if corg == self.org and cname == self.name:
                         return True
         return False
 
@@ -155,7 +156,7 @@ class MavenComponent(classComponent.Component):
 
         return -1
 
-    def upgrade_dependency(self):
+    def do_upgrade_dependency(self):
         files_to_patch = dict()
 
         # dirname = tempfile.TemporaryDirectory()
@@ -214,6 +215,7 @@ class MavenComponent(classComponent.Component):
                 fp.write('''    </dependencies>
 </project>
 ''')
+            # os.system('cat pom.xml')
         except Exception as e:
             print(e)
         return
@@ -224,63 +226,4 @@ class MavenComponent(classComponent.Component):
         if len(arr) == 4:
             return arr[1], arr[2], arr[3]
         else:
-            return '', '', ''
-
-    @staticmethod
-    def normalise_version(ver):
-        #
-        # 0. Check for trailing string for pre-releases
-        # 1. Replace separator chars
-        # 2. Check number of segments
-        # 3. Normalise to 3 segments
-        tempver = ver.lower()
-
-        # Only accept specific qualifiers
-        # Ignore specific qualifiers
-        # for cstr in [
-        #     'alpha', 'beta', 'milestone', 'rc', 'cr', 'dev', 'nightly', 'snapshot', 'pre',
-        #     'branch', 'merge', 'tag', 'before', 'split', 'osgi', 'talend', 'redhat'
-        # ]:
-        #     if tempver.find(cstr) != -1:
-        #         return None
-        good = False
-        match = re.search("[_.-]\D+[-]*\d*$", tempver)
-        if match is not None:
-            # qualifier found - check it's a valid one
-            qual = match.group()[1:]
-            matchqual = re.search("final|ga", qual)
-            if matchqual is None:
-                return None
-
-        # Check for datestrings
-        match = re.search("20\d{6}|\d{4}20\d\d", tempver)
-        if match is not None:
-            return None
-
-        # Remove leading 'rel[_-]'
-        tempver = re.sub('^rel[_-]', '', tempver)
-        # Remove trailing '[_-]qualifier[0-9]'
-        tempver = re.sub('[_-]\D+\d*$', '', tempver)
-        # Replace _ and - with .
-        tempver = re.sub('[_-]', '.', tempver)
-
-        arr = tempver.split('.')
-        if len(arr) == 3:
-            newver = tempver
-        elif len(arr) == 0:
-            return None
-        elif len(arr) > 3:
-            newver = '.'.join(arr[0:3])
-        elif len(arr) == 2:
-            newver = '.'.join(arr[0:2]) + '.0'
-        elif len(arr) == 1:
-            newver = f'{arr[0]}.0.0'
-        else:
-            return None
-
-        try:
-            tempver = semver.VersionInfo.parse(newver)
-        except Exception as e:
-            return None
-
-        return tempver
+            return arr[0], arr[1], arr[2]

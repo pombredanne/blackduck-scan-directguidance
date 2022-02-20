@@ -222,7 +222,7 @@ def github_comp_fix_pr(comp):
                            f"'{comp.goodupgrade} as it is already present")
         return
 
-    files_to_patch = comp.upgrade_dependency()
+    files_to_patch = comp.do_upgrade_dependency()
 
     if len(files_to_patch) == 0:
         print('BD-Scan-Action: WARN: Unable to apply fix patch - cannot determine containing package file')

@@ -293,7 +293,7 @@ synopsys-detect?properties=DETECT_LATEST_7"
 #         return ''
 
 
-# def normalise_version(ver):
+# def check_version_is_release(ver):
 #     #
 #     # 0. Check for training string for pre-releases
 #     # 1. Replace separator chars
@@ -360,13 +360,13 @@ def process_scan(scan_folder, bd):
 #     # origin = a_dirdep[0]
 #     # component_name = arr[1]
 #     # current_version = a_dirdep[-1]
-#     v_curr = normalise_version(comp.version)
+#     v_curr = check_version_is_release(comp.version)
 #     if v_curr is None:
 #         return
 #
 #     future_vers = []
 #     for ver, url in comp.versions[::-1]:
-#         v_ver = normalise_version(ver)
+#         v_ver = check_version_is_release(ver)
 #         if v_ver is None:
 #             continue
 #
@@ -387,7 +387,7 @@ def process_scan(scan_folder, bd):
 #         found_rels = [1000, -1, -1]
 #
 #         for ver, url in verslist:
-#             v_ver = normalise_version(ver)
+#             v_ver = check_version_is_release(ver)
 #             if major < v_ver.major < found_rels[0]:
 #                 found_rels = [v_ver.major, v_ver.minor, v_ver.patch]
 #                 foundver = ver
@@ -403,8 +403,8 @@ def process_scan(scan_folder, bd):
 #
 #     #
 #     # Find the initial upgrade (either latest in current version major range or guidance_short)
-#     v_guidance_short = normalise_version(comp.upgradeguidance[0])
-#     v_guidance_long = normalise_version(comp.upgradeguidance[1])
+#     v_guidance_short = check_version_is_release(comp.upgradeguidance[0])
+#     v_guidance_long = check_version_is_release(comp.upgradeguidance[1])
 #     foundvers = []
 #     if v_guidance_short is None:
 #         # Find final version in current major range

@@ -414,6 +414,7 @@ def main_process(output, runargs):
     direct_deps_to_upgrade.calc_vulns(rapid_scan_data)
     direct_deps_to_upgrade.find_upgrade_versions(globals.args.upgrade_major)
     direct_deps_to_upgrade.validate_upgrades()
+    direct_deps_to_upgrade.print_upgrade_summary()
 
     ret_status = True
     if globals.args.sarif is not None and globals.args.sarif != '':

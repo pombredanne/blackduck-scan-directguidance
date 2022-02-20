@@ -99,17 +99,28 @@ class ComponentList:
                     if comp.prepare_upgrade(upgrade_index):
 
                         test_upgrade_list.append([comp.org, comp.name, comp.potentialupgrades[upgrade_index]])
+                        globals.printdebug(f"Will test upgrade {comp.name}/{comp.version} to "
+                                           f"{comp.potentialupgrades[upgrade_index]}")
                         test_origdeps_list.append(comp.compid)
 
+            if len(test_origdeps_list) == 0:
+                os.chdir(origdir)
+                dirname.cleanup()
+                upgrade_index += 1
+                continue
             pm_list = []
             for comp in self.components:
-                if comp.pm not in pm_list:
+                if comp.pm not in pm_list and comp.compid in test_origdeps_list:
                     pm_list.append(comp.pm)
                     comp.finalise_upgrade()
+
+            if len(pm_list) == 1 and pm_list[0] == 'maven':
+                detect_connection_opts.append("--detect.detector.buildless=true")
 
             output = False
             if globals.debug > 0:
                 output = True
+
             pvurl, projname, vername, retval = utils.run_detect(detect_jar, detect_connection_opts, output)
 
             if retval == 3:
@@ -266,6 +277,7 @@ class ComponentList:
             projfileline = 0
             if len(comp.projfiles) > 0:
                 projfile = comp.projfiles[0]
+            if len(comp.projfilelines) > 0:
                 projfileline = comp.projfilelines[0]
 
             sarif_result.append(
@@ -359,7 +371,7 @@ class ComponentList:
             if incremental and comp.inbaseline:
                 continue
             md_main_table.append(comp.md_summary_table_row())
-            md_comp_data_string += f"### {comp.name}/{comp.version}\n\n" + comp.md_table()
+            md_comp_data_string += f"\n### {comp.name}/{comp.version}" + comp.md_table()
 
         # Sort main table here
         md_main_table = sorted(md_main_table, key=itemgetter(4), reverse=True)
@@ -373,3 +385,14 @@ class ComponentList:
             '\n\nVulnerable Direct Dependencies listed below:\n\n' + md_comp_data_string
 
         return md_comments
+
+    def print_upgrade_summary(self):
+        print('\n------------------------------------------------------------------------------------')
+        print('SUMMARY UPGRADE GUIDANCE:')
+        for comp in self.components:
+            if comp.goodupgrade != '':
+                upg = f'Upgrade to {comp.goodupgrade}'
+            else:
+                upg = 'No Upgrade Available'
+            print(f'- {comp.name}/{comp.version}: {upg}')
+        print('------------------------------------------------------------------------------------\n')

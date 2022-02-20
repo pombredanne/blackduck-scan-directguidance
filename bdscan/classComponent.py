@@ -33,6 +33,7 @@ class Component:
         self.maxvulnscore = 0
         self.maxchildvulnscore = 0
         self.vulnsummary = []
+        self.goodfutureversions = []
 
     def set_data(self, fieldname, data):
         if fieldname == 'projfiles':
@@ -48,6 +49,8 @@ class Component:
         elif fieldname == 'inbaseline':
             self.inbaseline = True
         elif fieldname == 'projfiles':
+            if data in self.projfiles:
+                return False
             self.projfiles.append(data)
         elif fieldname == 'projfilelines':
             self.projfilelines.append(data)
@@ -59,6 +62,9 @@ class Component:
             self.maxchildvulnscore = data
         elif fieldname == 'vulnsummary':
             self.vulnsummary.append(data)
+        elif fieldname == 'goodfutureversions':
+            self.goodfutureversions.append(data)
+        return True
 
     def add_vuln(self, vulnid, data):
         self.vulns[vulnid] = data
@@ -80,46 +86,28 @@ class Component:
         return False
 
     def find_upgrade_versions(self, upgrade_major):
-        v_curr = self.normalise_version(self.version)
+        v_curr = self.get_version_semver(self.version)
         if v_curr is None:
             return
 
         future_vers = []
-        for ver, url in self.versions[::-1]:
-            v_ver = self.normalise_version(ver)
+        for ver, url in self.goodfutureversions[::]:
+            v_ver = self.check_version_is_release(ver)
             if v_ver is None:
                 continue
 
             if self.check_ver_origin(ver):
                 future_vers.append([ver, url])
 
-        def find_next_ver(comp, verslist, major, minor, patch):
-            foundver = ''
-            found_rels = [1000, -1, -1]
-
-            for ver, url in verslist:
-                v_ver = comp.normalise_version(ver)
-                if major < v_ver.major < found_rels[0]:
-                    found_rels = [v_ver.major, v_ver.minor, v_ver.patch]
-                    foundver = ver
-                elif v_ver.major == major:
-                    if v_ver.minor > found_rels[1] and v_ver.minor > minor:
-                        found_rels = [major, v_ver.minor, v_ver.patch]
-                        foundver = ver
-                    elif v_ver.minor == found_rels[1] and v_ver.patch > found_rels[2] and v_ver.patch > patch:
-                        found_rels = [major, v_ver.minor, v_ver.patch]
-                        foundver = ver
-
-            return foundver, found_rels[0]
-
         #
         # Find the initial upgrade (either latest in current version major range or guidance_short)
-        v_guidance_short = self.normalise_version(self.upgradeguidance[0])
-        v_guidance_long = self.normalise_version(self.upgradeguidance[1])
+        v_guidance_short = self.check_version_is_release(self.upgradeguidance[0])
+        v_guidance_long = self.check_version_is_release(self.upgradeguidance[1])
         foundvers = []
         if v_guidance_short is None:
             # Find final version in current major range
-            verstring, guidance_major_last = find_next_ver(self, future_vers, v_curr.major, v_curr.minor, v_curr.patch)
+            verstring, guidance_major_last = Component.find_next_ver(
+                self, future_vers, v_curr.major, v_curr.minor, v_curr.patch)
         else:
             verstring = self.upgradeguidance[0]
             guidance_major_last = v_guidance_short.major + 1
@@ -128,16 +116,18 @@ class Component:
 
         if v_guidance_long is None:
             # Find final minor version in next major range
-            verstring, guidance_major_last = find_next_ver(self, future_vers, guidance_major_last, -1, -1)
+            verstring, guidance_major_last = Component.find_next_ver(
+                self, future_vers, guidance_major_last, -1, -1)
         else:
             verstring = self.upgradeguidance[1]
             guidance_major_last = v_guidance_long.major
-        if verstring != '' and upgrade_major:
+        if verstring != '' and upgrade_major and verstring not in foundvers:
             foundvers.append(verstring)
 
         if upgrade_major:
-            while len(foundvers) <= 3:
-                verstring, guidance_major_last = find_next_ver(self, future_vers, guidance_major_last + 1, -1, -1)
+            while len(foundvers) <= 4:
+                verstring, guidance_major_last = Component.find_next_ver(
+                    self, future_vers, guidance_major_last + 1, -1, -1)
                 if verstring == '':
                     break
                 foundvers.append(verstring)
@@ -252,7 +242,7 @@ class Component:
         ]
         return table
 
-    def upgrade_dependency(self):
+    def do_upgrade_dependency(self):
         print(f'BD-Scan-Action: WARNING: Unable to upgrade component {self.name}/{self.version} - unsupported package '
               f'manager')
         return
@@ -270,40 +260,100 @@ class Component:
             return '', '', ''
 
     @staticmethod
-    def normalise_version(ver):
+    def get_version_semver(ver):
+        # extract numeric semver
         #
-        # 0. Check for training string for pre-releases
-        # 1. Replace separator chars
-        # 2. Check number of segments
-        # 3. Normalise to 3 segments
-        tempver = ver.lower()
-
-        # for cstr in [
-        #     'alpha', 'beta', 'milestone', 'rc', 'cr', 'dev', 'nightly', 'snapshot', 'preview', 'prerelease', 'pre'
-        # ]:
-        #     if tempver.find(cstr) != -1:
-        #         return None
-        match = re.search('alpha|beta|milestone|rc|cr|dev|nightly|snapshot|preview|prerelease|pre', tempver)
-        if match is not None:
+        # 1. remove leading text
+        # 2. remove trailing segment with text
+        if ver == '':
             return None
+
+        tempver = re.sub('[A-Za-z_-]+\d*$', '', ver.lower())
+        tempver = re.sub('^\D+', '',tempver)
+        tempver = re.sub('[_-]+', '.', tempver)
 
         arr = tempver.split('.')
         if len(arr) == 3:
             newver = tempver
-        elif len(arr) == 0:
-            return None
         elif len(arr) > 3:
             newver = '.'.join(arr[0:3])
         elif len(arr) == 2:
             newver = '.'.join(arr[0:2]) + '.0'
         elif len(arr) == 1:
+            if arr[0].isnumeric():
+                if int(arr[0]) > 999:
+                    return None
             newver = f'{arr[0]}.0.0'
         else:
             return None
 
         try:
-            tempver = semver.VersionInfo.parse(newver)
+            retsemver = semver.VersionInfo.parse(newver)
         except Exception as e:
             return None
 
-        return tempver
+        return retsemver
+
+    @staticmethod
+    def check_version_is_release(ver):
+        #
+        # 0. Check for trailing string for pre-releases
+        # 1. Replace separator chars
+        # 2. Check number of segments
+        # 3. Normalise to 3 segments
+        tempsemver = Component.get_version_semver(ver)
+
+        match = re.search('alpha|beta|milestone|rc|cr|dev|nightly|snap|pre|talend|redhat|sonatype|osgi|brew|[_-]m\d$',
+                          ver.lower())
+        if match is not None:
+            return None
+
+        return tempsemver
+
+    def is_goodfutureversion(self, futurever):
+        curr_semver = self.get_version_semver(self.version)
+        future_semver = self.check_version_is_release(futurever)
+        shortguidance_semver = self.get_version_semver(self.upgradeguidance[0])
+        # longguidance_semver = self.check_version_is_release(self.longguidance[0])
+
+        if future_semver is None or curr_semver is None:
+            return False
+        if future_semver.major < curr_semver.major:
+            return False
+        elif future_semver.major == curr_semver.major:
+            if future_semver.minor < curr_semver.minor:
+                return False
+            elif future_semver.minor == curr_semver.minor and future_semver.patch <= curr_semver.patch:
+                return False
+        if shortguidance_semver is not None:
+            if future_semver.major < shortguidance_semver.major:
+                ok = False
+            elif future_semver.major == shortguidance_semver.major:
+                if future_semver.minor < shortguidance_semver.minor:
+                    ok = False
+                elif future_semver.minor == shortguidance_semver.minor and future_semver.patch < shortguidance_semver.patch:
+                    ok = False
+
+        return True
+
+    @staticmethod
+    def find_next_ver(comp, verslist, major, minor, patch):
+        foundver = ''
+        found_rels = [1000, -1, -1]
+
+        for ver, url in verslist:
+            v_ver = comp.check_version_is_release(ver)
+            if v_ver is None:
+                continue
+            if major < v_ver.major < found_rels[0]:
+                found_rels = [v_ver.major, v_ver.minor, v_ver.patch]
+                foundver = ver
+            elif v_ver.major == major:
+                if v_ver.minor > found_rels[1] and v_ver.minor > minor:
+                    found_rels = [major, v_ver.minor, v_ver.patch]
+                    foundver = ver
+                elif v_ver.minor == found_rels[1] and v_ver.patch > found_rels[2] and v_ver.patch > patch:
+                    found_rels = [major, v_ver.minor, v_ver.patch]
+                    foundver = ver
+
+        return foundver, found_rels[0]

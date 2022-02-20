@@ -42,7 +42,7 @@ class NpmComponent(classComponent.Component):
             return True
         return False
 
-    def upgrade_dependency(self):
+    def do_upgrade_dependency(self):
         # Key will be actual name, value will be local filename
 
         files_to_patch = dict()
