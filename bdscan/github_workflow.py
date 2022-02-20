@@ -118,7 +118,7 @@ def github_comp_commit_file_and_create_fixpr(g, comp, files_to_patch):
               f"Upgrade {comp.name} from version {comp.version} to " \
               f"{comp.goodupgrade} in order to fix security vulnerabilities:\n\n"
 
-    pr_body = pr_body + comp.longtext_md
+    pr_body = pr_body + comp.longtext_md()
     globals.printdebug(f"DEBUG: Submitting pull request:")
     globals.printdebug(pr_body)
     pr = repo.create_pull(title=f"Black Duck: Upgrade {comp.name} to version "

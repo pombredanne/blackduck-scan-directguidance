@@ -36,9 +36,7 @@ class Component:
         self.goodfutureversions = []
 
     def set_data(self, fieldname, data):
-        if fieldname == 'projfiles':
-            self.projfiles.append(data)
-        elif fieldname == 'compdata':
+        if fieldname == 'compdata':
             self.compdata = data
         elif fieldname == 'versions':
             self.versions = data
