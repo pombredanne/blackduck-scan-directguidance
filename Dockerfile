@@ -3,9 +3,7 @@ FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND noninteractive
 
 # Install python3 & pip
-RUN apt-get update && apt-get upgrade -y
-# RUN apt-get install -y python3 && apt-get install -y python3-pip
-RUN apt-get install -y python3-pip
+RUN apt-get update && apt-get upgrade -y && apt-get install -y python3-pip
 
 # Install bdscanaction
 # RUN pip3 install -i https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple blackduck-scan-action

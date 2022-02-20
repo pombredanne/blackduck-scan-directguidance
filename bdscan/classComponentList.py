@@ -114,7 +114,8 @@ class ComponentList:
                     pm_list.append(comp.pm)
                     comp.finalise_upgrade()
 
-            if len(pm_list) == 1 and pm_list[0] == 'maven':
+            if len(pm_list) == 1 and pm_list[0] == 'maven' and \
+                    "--detect.detector.buildless=true" not in detect_connection_opts:
                 detect_connection_opts.append("--detect.detector.buildless=true")
 
             output = False
@@ -274,7 +275,7 @@ class ComponentList:
         for comp in self.components:
             # md_comp_vulns_table = comp.md_table()
             projfile = ''
-            projfileline = 0
+            projfileline = 1
             if len(comp.projfiles) > 0:
                 projfile = comp.projfiles[0]
             if len(comp.projfilelines) > 0:
