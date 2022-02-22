@@ -372,6 +372,15 @@ def main_process(output, runargs):
     globals.github_sha = os.getenv("GITHUB_SHA")
     globals.printdebug(f'GITHUB_SHA={globals.github_sha}')
 
+    if not globals.args.nocheck:
+        if globals.args.fix_pr and not github_workflow.check_files_in_commit():
+            print('BD-Scan-Action: No package manager changes in commit - skipping dependency analysis')
+            sys.exit(0)
+
+        if globals.args.comment_on_pr and not github_workflow.check_files_in_pull_request():
+            print('BD-Scan-Action: No package manager changes in pull request - skipping dependency analysis')
+            sys.exit(0)
+
     # Run DETECT
     print(f"BD-Scan-Action: INFO: Running Black Duck detect with the following options: {runargs}")
     pvurl, projname, vername, detect_return_code = utils.run_detect(globals.detect_jar, runargs, True)
