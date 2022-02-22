@@ -190,7 +190,7 @@ class MavenComponent(classComponent.Component):
                     else:
                         # ToDo: Need to add version tag as it does not exist
                         new = ET.Element('version')
-                        new.text = self.version
+                        new.text = self.goodupgrade
                         dep.append(new)
                         break
 

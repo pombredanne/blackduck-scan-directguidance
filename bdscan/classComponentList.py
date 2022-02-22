@@ -46,7 +46,8 @@ class ComponentList:
         if compid in self.compids:
             index = self.compids.index(compid)
             comp = self.components[index]
-            comp.set_data(fieldname, data)
+            return comp.set_data(fieldname, data)
+        return False
 
     def add_origins_to_comp(self, compid, ver, data):
         if compid in self.compids:
@@ -372,7 +373,7 @@ class ComponentList:
             if incremental and comp.inbaseline:
                 continue
             md_main_table.append(comp.md_summary_table_row())
-            md_comp_data_string += f"\n### {comp.name}/{comp.version}" + comp.md_table()
+            md_comp_data_string += f"\n### Direct Dependency: {comp.name}/{comp.version}" + comp.md_table()
 
         # Sort main table here
         md_main_table = sorted(md_main_table, key=itemgetter(4), reverse=True)

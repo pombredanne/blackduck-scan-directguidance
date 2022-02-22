@@ -64,7 +64,7 @@ class NpmComponent(classComponent.Component):
 
             # print(f'DEBUG: upgrade_npm_dependency() - working in folder {os.getcwd()}')
 
-            cmd = f"npm install {self.name}@{self.version} --package-lock-only >/dev/null 2>&1"
+            cmd = f"npm install {self.name}@{self.goodupgrade} --package-lock-only >/dev/null 2>&1"
             print(f"BD-Scan-Action: INFO: Executing NPM to update component: {cmd}")
             err = os.system(cmd)
             if err > 0:

@@ -28,6 +28,8 @@ def main():
     parser.add_argument("--sarif", type=str, help="SARIF output file")
     parser.add_argument("--incremental_results", default="false", type=str,
                         help="Compare to previous intelligent scan project - only report & ix new/changed components")
+    parser.add_argument("--nocheck", type=str,
+                        help="Skip check of GH commit/PR for changed package manager config files")
     parser.add_argument("--detect_opts", type=str,
                         help="Passthrough options to Detect, comma delimited, exclude leading hyphens")
 
@@ -109,6 +111,14 @@ def main():
         print('  --incremental_results: Calculate incremental results (since last full/intelligent scan')
     else:
         globals.args.incremental_results = False
+
+    if globals.args.nocheck is None or globals.args.nocheck == 'false' or globals.args.nocheck == '':
+        globals.args.nocheck = False
+    elif str(globals.args.nocheck).lower() == 'true':
+        globals.args.nocheck = True
+        print('  --nocheck              Skip check of GH commit/PR for changed package manager config files')
+    else:
+        globals.args.nocheck = False
 
     # if globals.args.upgrade_indirect is None or globals.args.upgrade_indirect == 'false' or \
     #         globals.args.upgrade_indirect == '':

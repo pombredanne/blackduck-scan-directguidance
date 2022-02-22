@@ -1,4 +1,4 @@
-scan_utility_version = '1.0.6'
+scan_utility_version = '1.0.7'
 detect_jar = "/tmp/synopsys-detect.jar"
 # workflow_script = "/Users/mbrad/working/blackduck-scan-action/blackduck-rapid-scan-to-github.py"
 # detect_jar = "./synopsys-detect.jar"
@@ -14,7 +14,7 @@ debug = 0
 bd = None
 args = None
 
-pkg_files = ['pom.xml', 'package.json', 'npm-shrinkwrap.json', 'package-lock.json']
+pkg_files = ['pom.xml', 'package.json', 'npm-shrinkwrap.json', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock']
 
 pkg_exts = ['.csproj', '.fsproj', '.vbproj', '.asaproj', '.dcproj', '.shproj', '.ccproj', '.sfproj', '.njsproj',
             '.vcxproj', '.vcproj', '.xproj', '.pyproj', '.hiveproj', '.pigproj', '.jsproj', '.usqlproj', '.deployproj',
