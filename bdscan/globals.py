@@ -1,4 +1,4 @@
-scan_utility_version = '1.0.7'
+scan_utility_version = '1.0.8'
 detect_jar = "/tmp/synopsys-detect.jar"
 # workflow_script = "/Users/mbrad/working/blackduck-scan-action/blackduck-rapid-scan-to-github.py"
 # detect_jar = "./synopsys-detect.jar"
