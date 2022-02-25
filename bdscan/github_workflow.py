@@ -121,9 +121,16 @@ def github_comp_commit_file_and_create_fixpr(g, comp, files_to_patch):
     pr_body = pr_body + comp.longtext_md()
     globals.printdebug(f"DEBUG: Submitting pull request:")
     globals.printdebug(pr_body)
+
+    ghref = os.getenv('GITHUB_REF').split('/')
+    if len(ghref) == 3:
+        branch = ghref[2]
+    else:
+        branch = 'master'
+
     pr = repo.create_pull(title=f"Black Duck: Upgrade {comp.name} to version "
                                 f"{comp.goodupgrade} fix known security vulerabilities",
-                                body=pr_body, head=new_branch_name, base="master")
+                                body=pr_body, head=new_branch_name, base=branch)
     return True
 
 
@@ -134,8 +141,13 @@ def github_get_pull_requests(g):
 
     pull_requests = []
 
-    # TODO Should this handle other bases than master?
-    pulls = repo.get_pulls(state='open', sort='created', base='master', direction="desc")
+    ghref = os.getenv('GITHUB_REF').split('/')
+    if len(ghref) == 3:
+        branch = ghref[2]
+    else:
+        branch = 'master'
+
+    pulls = repo.get_pulls(state='open', sort='created', base=branch, direction="desc")
     for pull in pulls:
         globals.printdebug(f"DEBUG: Pull request number: {pull.number}: {pull.title}")
         pull_requests.append(pull.title)

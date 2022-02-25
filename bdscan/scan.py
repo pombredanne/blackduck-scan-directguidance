@@ -450,6 +450,7 @@ def main_process(output, runargs):
             ret_status = False
         if upgrade_count == 0:
             print('BD-Scan-Action: No upgrades available for Fix PR - skipping')
+            ret_status = True
 
     # Optionally comment on the pull request this is for
     if globals.args.comment_on_pr:
@@ -464,6 +465,8 @@ def main_process(output, runargs):
                 ret_status = False
         else:
             print('BD-Scan-Action: No upgrades available for Comment on PR - skipping')
+            ret_status = True
+
         github_workflow.github_set_commit_status(status_ok)
 
     if os.path.isdir(globals.args.output) and os.path.isdir(os.path.join(globals.args.output, "runs")):
