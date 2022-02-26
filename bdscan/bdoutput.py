@@ -4,6 +4,7 @@ import glob
 import json
 import os
 import sys
+import re
 from bdscan import globals, classComponentList
 
 
@@ -102,7 +103,9 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
         # Loop through comps to determine what needs upgrading
 
         dep_vulnerable = False
-        if len(item['policyViolationVulnerabilities']) > 0:
+        # TODO: Revisit license violations
+        if len(item['policyViolationVulnerabilities']) > 0 or len(item['policyViolationLicenses']) > 0:
+        #if len(item['policyViolationVulnerabilities']) > 0:
             dep_vulnerable = True
 
         globals.printdebug(f"DEBUG: Component: {item['componentIdentifier']}")
@@ -139,13 +142,12 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
         dep_dict[comp.compid]['deptype'] = 'Indirect'
         for proj in bdio_projects:
             dep_paths = nx.all_simple_paths(bdio_graph, source=proj, target=http_name)
-            globals.printdebug(f"DEBUG: Paths to '{http_name}'")
             for path in dep_paths:
                 path_mod = []
                 i = 0
                 projfile = ''
                 for p in path:
-                    if not p.endswith(f'/{comp.pm}') and not p.startswith('http:detect/') and not p == proj:
+                    if not p.endswith(tuple(['/' + s for s in comp.pms])) and not p.endswith(f'/{comp.pm}') and not p.startswith('http:detect/') and not p == proj and not re.match("http:.*\/%2F", p):
                         path_mod.append(p)
                     elif p.endswith(f'/{comp.pm}'):
                         projfile = comp.get_projfile(p, allpoms)
@@ -165,7 +167,8 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
 
                 # Then log the direct dependencies directly
                 # childdep = comp.normalise_dep(comp.compid)
-                if direct_dep != '' and dep_vulnerable:
+                #if direct_dep != '' and dep_vulnerable:
+                if dep_vulnerable:
                     dircomp = direct_vulnerable_clist.add(direct_dep)
 
                     projfile_ok = False

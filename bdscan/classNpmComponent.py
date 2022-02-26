@@ -11,6 +11,7 @@ class NpmComponent(classComponent.Component):
     def __init__(self, compid, name, version, ns):
         super().__init__(compid, name, version, ns)
         self.pm = 'npm'
+        self.pms = ['npm']
 
     def get_http_name(self):
         bdio_name = f"http:" + re.sub(":", "/", self.compid, 1)
@@ -94,3 +95,6 @@ class NpmComponent(classComponent.Component):
         except Exception as e:
             return -1
         return -1
+
+    def supports_direct_upgrades(self):
+        return True

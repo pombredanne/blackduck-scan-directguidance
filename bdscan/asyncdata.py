@@ -33,6 +33,7 @@ async def async_main(compidlist, bd, trustcert):
         versions_tasks = []
 
         for compid in compidlist.compids:
+            print(f"DEBUG: Get upgrade data for compid={compid} all_compdata={all_compdata}")
             upgradeguidance_task = asyncio.ensure_future(async_get_guidance(session, compid, all_compdata, token,
                                                                             trustcert))
             upgradeguidance_tasks.append(upgradeguidance_task)
@@ -49,7 +50,7 @@ async def async_main(compidlist, bd, trustcert):
         for compid in all_versions.keys():
             compidlist.set_data_in_comp(compid, 'versions', all_versions[compid])
 
-        globals.printdebug(f'got {len(all_upgradeguidance.keys())} all_upgradeguidances')
+        globals.printdebug(f'got {len(all_upgradeguidance.keys())} all_upgradeguidances = {all_upgradeguidance}')
         globals.printdebug(f'got {len(all_versions.keys())} all_versions')
 
     # Now get origin data - need to work out the subset of valid future versions to reduce requests
@@ -179,7 +180,6 @@ async def async_get_guidance(session, compid, compdata, token, trustcert):
     else:
         return None, None
 
-    # print(gurl)
     async with session.get(gurl, headers=headers, ssl=ssl) as resp:
         component_upgrade_data = await resp.json()
 

@@ -1,13 +1,16 @@
 import re
 import os
 # import shutil
+import sys
 import tempfile
 import hashlib
 # import sys
 import json
 from operator import itemgetter
 
-from bdscan import classComponent, classNugetComponent, classNpmComponent, classMavenComponent
+from bdscan import classComponent, classNugetComponent, classNpmComponent, classMavenComponent, classPyPiComponent, \
+    classConanComponent, classCargoComponent, classHexComponent, classGoLangComponent, classCondaComponent, \
+    classDartComponent
 from bdscan import utils, globals
 
 
@@ -17,6 +20,11 @@ class ComponentList:
         f"| Direct Dependency | Changed | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns | " \
         f"Max Indirect Vuln Severity | Upgrade to |\n| --- | --- | --- | --- | --- | --- | --- |\n"
 
+    md_comp_lic_hdr = \
+        "\n## SUMMARY License violations:\n\n" \
+        "| Parent | Child Component | License | Policy Violated | Direct Dep Changed |\n" \
+        "| --- | --- | --- | --- | --- |\n"
+
     def __init__(self):
         self.compids = []
         self.components = []
@@ -24,6 +32,8 @@ class ComponentList:
     def add(self, compid):
         if compid in self.compids:
             return self.components[self.compids.index(compid)]
+
+        globals.printdebug(f"DEBUG: add(compid={compid})")
 
         arr = re.split('[/:]', compid)
 
@@ -34,11 +44,25 @@ class ComponentList:
             component = classNugetComponent.NugetComponent(compid, arr[1], arr[2], ns)
         elif ns == 'maven':
             component = classMavenComponent.MavenComponent(compid, arr[1], arr[2], arr[3], ns)
+        elif ns == 'pypi':
+            component = classPyPiComponent.PyPiComponent(compid, arr[1], arr[2], ns)
+        elif ns == 'conan':
+            component = classConanComponent.ConanComponent(compid, arr[1], arr[2], ns)
+        elif ns == 'crates':
+            component = classCargoComponent.CargoComponent(compid, arr[1], arr[2], ns)
+        elif ns == 'hex':
+            component = classHexComponent.HexComponent(compid, arr[1], arr[2], ns)
+        elif ns == 'golang':
+            component = classGoLangComponent.GoLangComponent(compid, arr[1], arr[2], ns)
+        elif ns == 'anaconda':
+            component = classCondaComponent.CondaComponent(compid, arr[1], arr[2], ns)
+        elif ns == 'dart':
+            component = classDartComponent.DartComponent(compid, arr[1], arr[2], ns)
         else:
             component = classComponent.Component(compid, arr[1], arr[2], ns)
-            # raise ValueError(f'Unsupported package manager {ns}')
+            raise ValueError(f'Unsupported package manager {ns}')
         self.components.append(component)
-        self.compids.append(compid)
+        self.compids.append(component.compid)
 
         return component
 
@@ -96,6 +120,17 @@ class ComponentList:
             test_upgrade_list = []
             test_origdeps_list = []
             for comp in self.components:
+                # Do not process components in package managers not supported by direct upgrade guidance, but use
+                # regular upgrade guidance if available
+                if not comp.supports_direct_upgrades():
+                    if globals.debug: print(f"DEBUG: Component {comp.name} via package manager {comp.pm} does not"
+                                            "support direct upgrades, skipping")
+                    if comp.upgradeguidance and comp.upgradeguidance[0]:
+                        comp.goodupgrade = comp.upgradeguidance[0]
+                    elif comp.upgradeguidance and comp.upgradeguidance[1]:
+                        comp.goodupgrade = comp.upgradeguidance[1]
+                    continue
+
                 if comp.goodupgrade == '' and len(comp.potentialupgrades) > upgrade_index:
                     if comp.prepare_upgrade(upgrade_index):
 
@@ -197,6 +232,8 @@ class ComponentList:
             max_vuln_severity_children = 0
             existing_vulns = []
             existing_vulns_children = []
+            existing_lic_violations = []
+            existing_lic_violations_children = []
 
             for rscanitem in rapid_scan_data['items']:
                 child = False
@@ -257,6 +294,50 @@ class ComponentList:
                     if child and vuln['name'] not in existing_vulns_children:
                         comp.add_child_vuln(name, vuln_item)
                         comp.set_data('maxchildvulnscore', max_vuln_severity_children)
+
+                # TODO: Revisit license violations
+                for lic in rscanitem['policyViolationLicenses']:
+                    parent_name = '-'
+                    parent_ver = '-'
+                    if parent:
+                        print(f"lic={lic}")
+                        if lic['name'] in existing_lic_violations:
+                            continue
+                        #if max_vuln_severity < vuln['overallScore']:
+                        #    max_vuln_severity = vuln['overallScore']
+                    elif child:
+                        if lic['name'] in existing_lic_violations_children:
+                            continue
+                        #if max_vuln_severity_children < vuln['overallScore']:
+                        #    max_vuln_severity_children = vuln['overallScore']
+                        parent_name = comp.name
+                        parent_ver = comp.version
+                    child_ns, child_name, child_ver = comp.parse_compid(rscanitem['componentIdentifier'])
+
+                    name = lic['name']
+                    # TODO: This link is not user friendly; follow to generate correct link
+                    link = lic['_meta']['href']
+                    #link = f"{globals.args.url}/api/vulnerabilities/{name}/overview"
+                    licname = f'<a href="{link}" target="_blank">{name}</a>'
+
+                    if comp.inbaseline:
+                        changed = 'No'
+                    else:
+                        changed = 'Yes'
+
+                    lic_item = [
+                        f"{parent_name}/{parent_ver}",
+                        f"{child_name}/{child_ver}",
+                        licname,
+                        lic['violatingPolicies'][0]['policyName'],
+                        changed
+                    ]
+                    if parent and lic['name'] not in existing_lic_violations:
+                        comp.add_lic_violation(name, lic_item)
+                        #comp.set_data('maxvulnscore', max_vuln_severity)
+                    if child and lic['name'] not in existing_lic_violations_children:
+                        comp.add_child_lic_violation(name, lic_item)
+                        #comp.set_data('maxchildvulnscore', max_vuln_severity_children)
 
             # Sort the tables
             # vuln_list = sorted(vuln_list, key=itemgetter(3), reverse=True)
@@ -369,11 +450,17 @@ class ComponentList:
     def get_comments(self, incremental):
         md_main_table = []
         md_comp_data_string = ''
+        md_lic_table_string = ''
         for comp in self.components:
             if incremental and comp.inbaseline:
                 continue
-            md_main_table.append(comp.md_summary_table_row())
+
+            if comp.get_num_vulns() > 0:
+                md_main_table.append(comp.md_summary_table_row())
+
             md_comp_data_string += f"\n### Direct Dependency: {comp.name}/{comp.version}" + comp.md_table()
+
+            md_lic_table_string += comp.md_lic_table()
 
         # Sort main table here
         md_main_table = sorted(md_main_table, key=itemgetter(4), reverse=True)
@@ -383,8 +470,16 @@ class ComponentList:
         md_main_table_string = ''
         for row in md_main_table:
             md_main_table_string += '| ' + sep.join(row) + ' |\n'
-        md_comments = self.md_directdeps_header + md_main_table_string + \
-            '\n\nVulnerable Direct Dependencies listed below:\n\n' + md_comp_data_string
+
+        md_comments = ''
+        if len(md_main_table) > 0:
+            md_comments += self.md_directdeps_header + md_main_table_string
+
+        if (len(md_lic_table_string) > 1):
+            md_comments += self.md_comp_lic_hdr + md_lic_table_string
+
+        if len(md_main_table) > 0:
+            md_comments += '\n\nVulnerable Direct Dependencies listed below:\n\n' + md_comp_data_string
 
         return md_comments
 
@@ -398,3 +493,6 @@ class ComponentList:
                 upg = 'No Upgrade Available'
             print(f'- {comp.name}/{comp.version}: {upg}')
         print('------------------------------------------------------------------------------------\n')
+
+    def supports_direct_upgrades(self):
+        return False

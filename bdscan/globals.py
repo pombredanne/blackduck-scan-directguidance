@@ -14,7 +14,10 @@ debug = 0
 bd = None
 args = None
 
-pkg_files = ['pom.xml', 'package.json', 'npm-shrinkwrap.json', 'package-lock.json', 'pnpm-lock.yaml', 'yarn.lock']
+pkg_files = ['pom.xml', 'package.json', 'npm-shrinkwrap.json', 'package-lock.json', 'Cargo.toml', 'Cargo.lock',
+             'conanfile.txt', 'environment.yml', 'pubspec.yml', 'pubspec.lock', 'gogradle.lock', 'Gopkg.lock',
+             'go.mod', 'vendor,json', 'vendor.conf', 'build.gradle', 'rebar.config', 'lerna.json', 'requirements.txt',
+             'Pipfile', 'Pipfile.lock', 'yarn.lock']
 
 pkg_exts = ['.csproj', '.fsproj', '.vbproj', '.asaproj', '.dcproj', '.shproj', '.ccproj', '.sfproj', '.njsproj',
             '.vcxproj', '.vcproj', '.xproj', '.pyproj', '.hiveproj', '.pigproj', '.jsproj', '.usqlproj', '.deployproj',
