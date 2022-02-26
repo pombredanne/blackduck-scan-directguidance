@@ -7,8 +7,7 @@ import shutil
 
 from blackduck import Client
 
-from bdscan import bdoutput, utils, globals, asyncdata as asyncdata, github_workflow
-
+from bdscan import bdoutput, utils, globals, asyncdata as asyncdata, classGitHubProvider
 
 def process_bd_scan(output):
     project_baseline_name, project_baseline_version, globals.detected_package_files = \
@@ -364,20 +363,35 @@ version '{project_baseline_version}' - cannot calculate incremental results")
 
 
 def main_process(output, runargs):
-    globals.github_token = os.getenv("GITHUB_TOKEN")
-    globals.github_repo = os.getenv("GITHUB_REPOSITORY")
-    globals.github_ref = os.getenv("GITHUB_REF")
-    globals.printdebug(f'GITHUB_REF={globals.github_ref}')
-    globals.github_api_url = os.getenv("GITHUB_API_URL")
-    globals.github_sha = os.getenv("GITHUB_SHA")
-    globals.printdebug(f'GITHUB_SHA={globals.github_sha}')
+    globals.scm_provider = None
+
+    if globals.args.scm == 'github':
+        print(f"BD-Scan-Action: Interfacing with GitHub")
+        globals.scm_provider = classGitHubProvider.GitHubProvider()
+    elif globals.args.scm == 'azure':
+        print(f"BD-Scan-Action: Azure DevOps not supported yet")
+        sys.exit(1)
+    elif globals.args.scm == 'gitlab':
+        print(f"BD-Scan-Action: GitLab not supported yet")
+        sys.exit(1)
+    elif globals.args.scm == 'bitbucket':
+        print(f"BD-Scan-Action: BitBucket Pipelines not supported yet")
+        sys.exit(1)
+    elif globals.args.scm == 'bitbucket-server':
+        print(f"BD-Scan-Action: BitBucket Server/Data Center not supported yet")
+        sys.exit(1)
+    else:
+        print(f"BD-Scan-Action: ERROR: Specified SCM '{globals.args.scm}' not supported yet")
+        sys.exit(1)
+
+    globals.scm_provider.init()
 
     if not globals.args.nocheck:
-        if globals.args.fix_pr and not github_workflow.check_files_in_commit():
+        if globals.args.fix_pr and not globals.scm_provider.check_files_in_commit():
             print('BD-Scan-Action: No package manager changes in commit - skipping dependency analysis')
             sys.exit(0)
 
-        if globals.args.comment_on_pr and not github_workflow.check_files_in_pull_request():
+        if globals.args.comment_on_pr and not globals.scm_provider.check_files_in_pull_request():
             print('BD-Scan-Action: No package manager changes in pull request - skipping dependency analysis')
             sys.exit(0)
 
@@ -439,13 +453,13 @@ def main_process(output, runargs):
                 continue
             if comp.goodupgrade != '':
                 upgrade_count += 1
-                if github_workflow.github_comp_fix_pr(comp):
+                if globals.scm_provider.comp_fix_pr(comp):
                     ok = True
             else:
                 print(f'BD-Scan-Action: WARNING: Unable to create fix pull request for component {comp.name}')
         if ok:
             print(f'BD-Scan-Action: Created {upgrade_count} pull requests')
-            github_workflow.github_set_commit_status(True)
+            globals.scm_provider.set_commit_status(True)
         else:
             ret_status = False
         if upgrade_count == 0:
@@ -456,7 +470,7 @@ def main_process(output, runargs):
         status_ok = True
         if len(direct_deps_to_upgrade.components) > 0:
             comment = direct_deps_to_upgrade.get_comments(globals.args.incremental_results)
-            if github_workflow.github_pr_comment(comment):
+            if globals.scm_provider.pr_comment(comment):
                 status_ok = False
                 print('BD-Scan-Action: Created comment on existing pull request')
             else:
@@ -464,7 +478,7 @@ def main_process(output, runargs):
                 ret_status = False
         else:
             print('BD-Scan-Action: No upgrades available for Comment on PR - skipping')
-        github_workflow.github_set_commit_status(status_ok)
+        globals.scm_provider.set_commit_status(status_ok)
 
     if os.path.isdir(globals.args.output) and os.path.isdir(os.path.join(globals.args.output, "runs")):
         shutil.rmtree(globals.args.output, ignore_errors=False, onerror=None)
