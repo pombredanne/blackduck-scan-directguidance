@@ -309,8 +309,8 @@ def github_pr_comment(comment):
     else:
         globals.printdebug(f"DEBUG: Create new comment for PR #{pull_number_for_sha}")
         github_create_pull_request_comment(g, pr, comments_markdown)
-        # issue = repo.get_issue(number=pr.number)
-        # issue.create_comment(comments_markdown)
+        issue = repo.get_issue(number=pr.number)
+        issue.create_comment(comments_markdown)
     return True
 
 
