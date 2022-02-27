@@ -18,6 +18,8 @@ class MyTreeBuilder(ET.TreeBuilder):
 class NugetComponent(classComponent.Component):
     def __init__(self, compid, name, version, ns):
         super().__init__(compid, name, version, ns)
+        self.pm = 'nuget'
+        self.pms = [ 'nuget' ]
 
     def get_http_name(self):
         bdio_name = f"http:" + re.sub(":", "/", self.compid)
@@ -131,3 +133,6 @@ class NugetComponent(classComponent.Component):
                     files_to_patch[package_file] = os.path.join(tempdirname, package_file)
 
         return files_to_patch
+
+    def supports_direct_upgrades(self):
+        return True

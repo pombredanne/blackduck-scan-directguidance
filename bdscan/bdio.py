@@ -71,7 +71,7 @@ def get_bdio_dependency_graph(output_dir):
         globals.printdebug("DEBUG: Processing bdio ..")
         for node in bdio['@graph']:
             parent = node['@id']
-            # globals.printdebug(f"DEBUG: Parent {parent}")
+            globals.printdebug(f"DEBUG: Parent {parent}")
 
             # nx_node = None
 
@@ -79,17 +79,17 @@ def get_bdio_dependency_graph(output_dir):
                 if isinstance(node['https://blackducksoftware.github.io/bdio#hasDependency'], list):
                     for dependency in node['https://blackducksoftware.github.io/bdio#hasDependency']:
                         child = dependency['https://blackducksoftware.github.io/bdio#dependsOn']['@id']
-                        # globals.printdebug(f"DEBUG:   Dependency on {child}")
+                        globals.printdebug(f"DEBUG:   Dependency on {child}")
                         nx_node = G.add_edge(parent, child)
                 else:
                     child = node['https://blackducksoftware.github.io/bdio#hasDependency'][
                         'https://blackducksoftware.github.io/bdio#dependsOn']['@id']
-                    # globals.printdebug(f"DEBUG:   (2) Dependency on {child}")
+                    globals.printdebug(f"DEBUG:   (2) Dependency on {child}")
                     nx_node = G.add_edge(parent, child)
 
                 if node['@type'] == "https://blackducksoftware.github.io/bdio#Project":
                     projects.append(parent)
-                    # globals.printdebug(f"DEBUG:   Project name is {parent}")
+                    globals.printdebug(f"DEBUG:   Project name is {parent}")
                     G.add_node(parent, project=1)
             else:
                 nx_node = G.add_node(parent)

@@ -11,6 +11,8 @@ from github import Github
 
 
 def github_create_pull_request_comment(g, pr, comments_markdown):
+    globals.printdebug(f"DEBUG: Entering github_create_pull_request_comment comments_markdown={comments_markdown}")
+
     globals.printdebug(f"DEBUG: Look up GitHub repo '{globals.github_repo}'")
     repo = g.get_repo(globals.github_repo)
 
@@ -309,8 +311,9 @@ def github_pr_comment(comment):
     else:
         globals.printdebug(f"DEBUG: Create new comment for PR #{pull_number_for_sha}")
         github_create_pull_request_comment(g, pr, comments_markdown)
-        issue = repo.get_issue(number=pr.number)
-        issue.create_comment(comments_markdown)
+        # JC: Commenting out the below, we identified this earlier
+        #issue = repo.get_issue(number=pr.number)
+        #issue.create_comment(comments_markdown)
     return True
 
 
@@ -382,49 +385,29 @@ def check_files_in_pull_request():
     pr = None
     pr_commit = None
     if globals.debug: print(f"DEBUG: Pull requests:")
-    pull_number_for_sha = 0
-    for pull in pulls:
-        if globals.debug: print(f"DEBUG: Pull request number: {pull.number}")
-        # Can we find the current commit sha?
-        commits = pull.get_commits()
-        for commit in commits.reversed:
-            if globals.debug: print(f"DEBUG:   Commit sha: " + str(commit.sha))
-            if commit.sha == github_sha:
-                if globals.debug: print(f"DEBUG:     Found")
-                pull_number_for_sha = pull.number
-                pr = pull
-                pr_commit = commit
-                break
-        if pull_number_for_sha != 0: break
 
-    if pr_commit is None:
-        print(f"ERROR: Unable to find pull request commits")
+    pull_number_for_sha = None
+    m = re.search('pull\/(.+?)\/', globals.github_ref)
+    if m:
+        pull_number_for_sha = int(m.group(1))
+
+    if globals.debug: print(f"DEBUG: Pull request #{pull_number_for_sha}")
+
+    if pull_number_for_sha == None:
+        print(f"ERROR: Unable to find pull request #{pull_number_for_sha}, must be operating on a push or other event")
         sys.exit(1)
 
-    # globals.printdebug(f"DEBUG: Pull request #{pull_number_for_sha}")
-    #
-    # if pull_number_for_sha is None:
-    #     print(f"BD-Scan-Action: ERROR: Unable to find pull request #{pull_number_for_sha}")
-    #     return False
-    #
-    # pr = repo.get_pull(pull_number_for_sha)
-    #
-    # pr_comments = repo.get_issues_comments(sort='updated', direction='desc')
-    # existing_comment = None
-    # for pr_comment in pr_comments:
-    #     globals.printdebug(f"DEBUG: Issue comment={pr_comment.body}")
-    #     if "Synopsys Black Duck XXXX" in pr_comment.body:
-    #         globals.printdebug(f"DEBUG: Found existing comment")
-    #         existing_comment = pr_comment
+    pr = repo.get_pull(pull_number_for_sha)
 
     found = False
-    for commit_file in pr_commit.raw_data['files']:
-        if os.path.basename(commit_file['filename']) in globals.pkg_files:
-            found = True
-            break
+    for pr_commit in pr.get_commits():
+        for commit_file in pr_commit.raw_data['files']:
+            if os.path.basename(commit_file['filename']) in globals.pkg_files:
+                found = True
+                break
 
-        if os.path.splitext(commit_file['filename'])[-1] in globals.pkg_exts:
-            found = True
-            break
+            if os.path.splitext(commit_file['filename'])[-1] in globals.pkg_exts:
+                found = True
+                break
 
     return found

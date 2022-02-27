@@ -18,6 +18,9 @@ class MavenComponent(classComponent.Component):
     def __init__(self, compid, org, name, version, ns):
         super().__init__(compid, name, version, ns)
         self.org = org
+        self.pm = 'maven'
+        self.pms = ['maven', 'gradle']
+
 
     def get_http_name(self):
         bdio_name = "http:" + re.sub(":", "/", self.compid)
@@ -227,3 +230,6 @@ class MavenComponent(classComponent.Component):
             return arr[1], arr[2], arr[3]
         else:
             return arr[0], arr[1], arr[2]
+
+    def supports_direct_upgrades(self):
+        return True

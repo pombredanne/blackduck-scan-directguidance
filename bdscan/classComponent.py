@@ -11,9 +11,12 @@ class Component:
         "\n| Parent | Child Component | Vulnerability | Score |  Policy Violated | Description | " \
         "Direct Dep Changed |\n| --- | --- | --- | --- | --- | --- | --- |\n"
 
+
+
     def __init__(self, compid, name, version, ns):
         self.ns = ns
         self.pm = ns
+        self.pms = [ ns ]
         self.org = ''  # Used in Maven
         self.name = name
         self.version = version
@@ -34,6 +37,8 @@ class Component:
         self.maxchildvulnscore = 0
         self.vulnsummary = []
         self.goodfutureversions = []
+        self.lic_violations = {}
+        self.child_lic_violations = {}
 
     def set_data(self, fieldname, data):
         if fieldname == 'compdata':
@@ -70,8 +75,17 @@ class Component:
     def add_child_vuln(self, vulnid, data):
         self.childvulns[vulnid] = data
 
+    def add_lic_violation(self, licid, data):
+        self.lic_violations[licid] = data
+
+    def add_child_lic_violation(self, licid, data):
+        self.child_lic_violations[licid] = data
+
     def set_origins(self, ver, data):
         self.origins[ver] = data
+
+    def get_num_vulns(self):
+        return len(self.vulns.keys())
 
     def check_ver_origin(self, ver):
         if len(self.origins) > 0 and ver in self.origins.keys():
@@ -99,15 +113,23 @@ class Component:
 
         #
         # Find the initial upgrade (either latest in current version major range or guidance_short)
-        v_guidance_short = self.check_version_is_release(self.upgradeguidance[0])
-        v_guidance_long = self.check_version_is_release(self.upgradeguidance[1])
+        if (len(self.upgradeguidance) > 0):
+            v_guidance_short = self.check_version_is_release(self.upgradeguidance[0])
+            v_guidance_long = self.check_version_is_release(self.upgradeguidance[1])
+        else:
+            v_guidance_short = None
+            v_guidance_long = None
+
         foundvers = []
         if v_guidance_short is None:
             # Find final version in current major range
             verstring, guidance_major_last = Component.find_next_ver(
                 self, future_vers, v_curr.major, v_curr.minor, v_curr.patch)
         else:
-            verstring = self.upgradeguidance[0]
+            if (len(self.upgradeguidance) > 0):
+                verstring = self.upgradeguidance[0]
+            else:
+                verstring = None
             guidance_major_last = v_guidance_short.major + 1
         if verstring != '':
             foundvers.append(verstring)
@@ -154,6 +176,26 @@ class Component:
 
         md_table_string = self.md_comp_vulns_hdr + md_table_string
         return md_table_string
+
+    def md_lic_table(self):
+        md_comp_lic_table = []
+        for licid in self.lic_violations.keys():
+            md_comp_lic_table.append(self.lic_violations[licid])
+        for licid in self.child_lic_violations.keys():
+            md_comp_lic_table.append(self.child_lic_violations[licid])
+
+        # sort the table here
+        # TODO
+        #md_comp_lic_table = sorted(md_comp_lic_table, key=itemgetter(3), reverse=True)
+
+        sep = ' | '
+        md_table_string = ''
+        for row in md_comp_lic_table:
+            md_table_string += '| ' + sep.join(row) + ' |\n'
+
+        # Do not prepend header, unlike vulnerabilities this will all be summarized
+        return md_table_string
+
 
     def shorttext(self):
         if len(self.vulns) > 0 and len(self.childvulns) > 0:
