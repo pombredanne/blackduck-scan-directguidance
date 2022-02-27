@@ -42,6 +42,8 @@ def main():
                         help="Skip check of GH commit/PR for changed package manager config files")
     parser.add_argument("--detect_opts", type=str,
                         help="Passthrough options to Detect, comma delimited, exclude leading hyphens")
+    parser.add_argument("--scm", default="github", type=str,
+                        help="SCM Platform to integrate with")
 
     globals.args = parser.parse_args()
 
@@ -116,6 +118,9 @@ def main():
     #     globals.args.upgrade_indirect = False
     # Ignoring the upgrade_indirect setting as it is no longer useful
     # globals.args.upgrade_indirect = True
+
+    if globals.args.scm is None or globals.args.scm == '':
+        globals.args.scm = 'github'
 
     globals.debug = 0
     if not isempty(globals.args.debug):

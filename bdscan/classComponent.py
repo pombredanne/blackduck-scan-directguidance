@@ -11,8 +11,6 @@ class Component:
         "\n| Parent | Child Component | Vulnerability | Score |  Policy Violated | Description | " \
         "Direct Dep Changed |\n| --- | --- | --- | --- | --- | --- | --- |\n"
 
-
-
     def __init__(self, compid, name, version, ns):
         self.ns = ns
         self.pm = ns
@@ -244,9 +242,6 @@ class Component:
             return utils.remove_cwd_from_filename(projfile)
 
     def get_projfile_linenum(self, filename):
-        # if comp_ns == 'maven':
-        #     return Mavenutils.get_pom_line(comp, ver, filename)
-        # else:
         try:
             with open(filename, 'r') as f:
                 for (i, line) in enumerate(f):

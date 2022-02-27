@@ -5,7 +5,7 @@ import json
 import os
 import sys
 import re
-from bdscan import globals, classComponentList
+from bdscan import globals, classComponentList, utils
 
 
 # from BlackDuckUtils import MavenUtils
@@ -187,7 +187,7 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
                                 break
 
                     if projfile_ok:
-                        if direct_vulnerable_clist.set_data_in_comp(direct_dep, 'projfiles', projfile):
+                        if direct_vulnerable_clist.set_data_in_comp(direct_dep, 'projfiles', utils.remove_cwd_from_filename(projfile)):
                             direct_vulnerable_clist.set_data_in_comp(direct_dep, 'projfilelines', linenum)
 
     return dep_dict, direct_vulnerable_clist
