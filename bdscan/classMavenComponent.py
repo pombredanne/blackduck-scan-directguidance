@@ -185,7 +185,7 @@ class MavenComponent(classComponent.Component):
                         version = verentry.text
                         globals.printdebug(
                             f"DEBUG:   Found GroupId={groupId} ArtifactId={artifactId} Version={version}")
-                        verentry.text = self.version
+                        verentry.text = self.goodupgrade
                         break
                     else:
                         # ToDo: Need to add version tag as it does not exist

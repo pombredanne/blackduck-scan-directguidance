@@ -8,6 +8,16 @@ from bdscan import globals
 
 
 def main():
+    def isempty(val):
+        if val is None or val == '':
+            return True
+        return False
+
+    def evaltrue(val):
+        if not isempty(val) and str(val).lower() == 'true':
+            return True
+        return False
+
     # os.chdir('/Users/mbrad/working/duck_hub_ORI')
     parser = argparse.ArgumentParser(
         description="Scan project to determine upgrades for vulnerable dirwct dependencies")
@@ -35,45 +45,35 @@ def main():
 
     globals.args = parser.parse_args()
 
-    if globals.args.url is None or globals.args.url == '':
+    if isempty(globals.args.url):
         globals.args.url = os.getenv("BLACKDUCK_URL")
-    if globals.args.token is None or globals.args.token == '':
+    if isempty(globals.args.token):
         globals.args.token = os.getenv("BLACKDUCK_API_TOKEN")
+
+    if isempty(globals.args.url) or isempty(globals.args.token):
+        print(f"BD-Scan-Action: ERROR: Must specify Black Duck Hub URL and API Token")
+        sys.exit(1)
 
     print(f'BD-Scan-Action: Start\n\n'
           f'--- BD-SCAN-ACTION CONFIGURATION (version {globals.scan_utility_version}) -----------------------')
-    if globals.args.trustcert is None or globals.args.trustcert == '':
-        globals.args.trustcert = False
-    elif str(globals.args.trustcert).lower() == 'true':
-        globals.args.trustcert = True
-    else:
-        globals.args.trustcert = False
 
+    globals.args.trustcert = evaltrue(globals.args.trustcert)
     if globals.args.trustcert is False:
-        globals.args.trustcert = os.getenv("BLACKDUCK_TRUST_CERT")
-        if globals.args.trustcert is None:
+        trustcert = os.getenv("BLACKDUCK_TRUST_CERT")
+        if isempty(trustcert):
             globals.args.trustcert = False
         else:
             globals.args.trustcert = True
 
-    if globals.args.fix_pr is None or str(globals.args.fix_pr).lower() == 'false' or globals.args.fix_pr == '':
-        globals.args.fix_pr = False
-    elif str(globals.args.fix_pr).lower() == 'true':
-        globals.args.fix_pr = True
+    globals.args.fix_pr = evaltrue(globals.args.fix_pr)
+    if globals.args.fix_pr:
         print('  --fix_pr:              CREATE FIX PR')
-    else:
-        globals.args.fix_pr = False
 
-    if globals.args.comment_on_pr is None or str(globals.args.comment_on_pr).lower() == 'false' or \
-            globals.args.comment_on_pr == '':
-        globals.args.comment_on_pr = False
-    elif str(globals.args.comment_on_pr).lower() == 'true':
-        globals.args.comment_on_pr = True
+    globals.args.comment_on_pr = evaltrue(globals.args.comment_on_pr)
+    if globals.args.comment_on_pr:
         print('  --comment_on_pr:       ADD COMMENT TO EXISTING PR')
-    else:
-        globals.args.comment_on_pr = False
 
-    if globals.args.sarif is not None and globals.args.sarif != '':
+    if not isempty(globals.args.sarif):
         print(f"  --sarif:               OUTPUT GH SARIF TO '{globals.args.sarif}'")
     else:
         globals.args.sarif = None
@@ -85,7 +85,7 @@ def main():
         runargs.append("--blackduck.trust.cert=true")
         print('  --trustcert:           Trust BD server certificate')
 
-    if globals.args.mode is None or globals.args.mode == '':
+    if isempty(globals.args.mode):
         globals.args.mode = 'rapid'
     elif str(globals.args.mode).lower() == 'full' or str(globals.args.mode).lower() == 'intelligent':
         globals.args.mode = 'intelligent'
@@ -94,31 +94,17 @@ def main():
         globals.args.mode = 'rapid'
         print('  --mode:                Run Rapid scan')
 
-    if globals.args.upgrade_major is None or globals.args.upgrade_major == 'false' or \
-            globals.args.upgrade_major == '':
-        globals.args.upgrade_major = False
-    elif str(globals.args.upgrade_major).lower() == 'true':
-        globals.args.upgrade_major = True
+    globals.args.upgrade_major = evaltrue(globals.args.upgrade_major)
+    if globals.args.upgrade_major:
         print('  --upgrade_major:       Allow major version upgrades')
-    else:
-        globals.args.upgrade_major = False
 
-    if globals.args.incremental_results is None or globals.args.incremental_results == 'false' or \
-            globals.args.incremental_results == '':
-        globals.args.incremental_results = False
-    elif str(globals.args.incremental_results).lower() == 'true':
-        globals.args.incremental_results = True
+    globals.args.incremental_results = evaltrue(globals.args.incremental_results)
+    if globals.args.incremental_results:
         print('  --incremental_results: Calculate incremental results (since last full/intelligent scan')
-    else:
-        globals.args.incremental_results = False
 
-    if globals.args.nocheck is None or globals.args.nocheck == 'false' or globals.args.nocheck == '':
-        globals.args.nocheck = False
-    elif str(globals.args.nocheck).lower() == 'true':
-        globals.args.nocheck = True
+    globals.args.nocheck = evaltrue(globals.args.nocheck)
+    if globals.args.nocheck:
         print('  --nocheck              Skip check of GH commit/PR for changed package manager config files')
-    else:
-        globals.args.nocheck = False
 
     # if globals.args.upgrade_indirect is None or globals.args.upgrade_indirect == 'false' or \
     #         globals.args.upgrade_indirect == '':
@@ -132,7 +118,7 @@ def main():
     # globals.args.upgrade_indirect = True
 
     globals.debug = 0
-    if globals.args.debug is not None and globals.args.debug != '':
+    if not isempty(globals.args.debug):
         globals.debug = int(globals.args.debug)
 
     runargs.extend(["--blackduck.url=" + globals.args.url,
@@ -143,26 +129,23 @@ def main():
                     "--detect.bdio.file.name=scanout.bdio",
                     "--detect.cleanup=false"])
 
-    if globals.args.project is not None and globals.args.project != '':
+    if not isempty(globals.args.project):
         runargs.append("--detect.project.name=" + globals.args.project)
         print(f"  --project:            BD project name '{globals.args.project}'")
 
-    if globals.args.version is not None and globals.args.version != '':
+    if not isempty(globals.args.version):
         runargs.append("--detect.project.version.name=" + globals.args.version)
         print(f"  --version:            BD project version name '{globals.args.version}'")
 
-    if globals.args.detect_opts is not None and globals.args.detect_opts != '':
+    if not isempty(globals.args.detect_opts):
         for opt in str(globals.args.detect_opts).split(','):
             newopt = f"--{opt}"
             print(f"  --detect_opts:    Add option to Detect scan {newopt}")
             runargs.append(newopt)
 
     print('-------------------------------------------------------------------------\n')
-    if globals.args.url is None or globals.args.token is None:
-        print(f"BD-Scan-Action: ERROR: Must specify Black Duck Hub URL and API Token")
-        sys.exit(1)
 
-    if globals.args.sarif is None and not globals.args.comment_on_pr and not globals.args.fix_pr and \
+    if isempty(globals.args.sarif) and not globals.args.comment_on_pr and not globals.args.fix_pr and \
             globals.args.mode == 'rapid':
         print("BD-Scan-Action: Nothing to do - specify at least 1 option from 'sarif, comment_on_pr, fix_pr'")
         sys.exit(1)

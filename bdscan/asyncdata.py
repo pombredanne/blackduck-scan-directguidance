@@ -201,7 +201,7 @@ async def async_get_guidance(session, compid, compdata, token, trustcert):
 
 
 async def async_get_origins(session, compid, ver, verurl, token, trustcert):
-    globals.printdebug(f"{compid}: {ver} - {verurl}")
+    # globals.printdebug(f"{compid}: {ver} - {verurl}")
     if trustcert:
         ssl = False
     else:
