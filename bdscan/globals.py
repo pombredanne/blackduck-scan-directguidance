@@ -13,6 +13,7 @@ debug = 0
 # skip_detect = False
 bd = None
 args = None
+scm_provider = None
 
 pkg_files = ['pom.xml', 'package.json', 'npm-shrinkwrap.json', 'package-lock.json', 'Cargo.toml', 'Cargo.lock',
              'conanfile.txt', 'environment.yml', 'pubspec.yml', 'pubspec.lock', 'gogradle.lock', 'Gopkg.lock',

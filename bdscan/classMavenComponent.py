@@ -139,8 +139,6 @@ class MavenComponent(classComponent.Component):
 
         nsmap = {'m': 'http://maven.apache.org/POM/4.0.0'}
 
-        # globals.printdebug(f"DEBUG: Search for maven dependency {comp}@{ver}")
-
         for dep in root.findall('.//m:dependencies/m:dependency', nsmap):
             groupId = dep.find('m:groupId', nsmap).text
             artifactId = dep.find('m:artifactId', nsmap).text
@@ -149,12 +147,10 @@ class MavenComponent(classComponent.Component):
             if verentry is not None:
                 version = verentry.text
 
-            if artifactId == self.name and version == '':
-                globals.printdebug(f"DEBUG:   Found GroupId={groupId} ArtifactId={artifactId} NOVersion")
+            if artifactId == self.name and (version == '' or "${" in version):
                 return getline(self.name, '', filename)
 
             if artifactId == self.name and version == self.version:
-                globals.printdebug(f"DEBUG:   Found GroupId={groupId} ArtifactId={artifactId} Version={version}")
                 return getline(self.name, self.version, filename)
 
         return -1

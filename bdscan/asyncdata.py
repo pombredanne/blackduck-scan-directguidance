@@ -68,6 +68,10 @@ async def async_main(compidlist, bd, trustcert):
             # short_guidance_ver = comp.check_version_is_release(comp.upgradeguidance[0])
             # reduced_version_list[compid] = []
 
+            # If component does not support upgrades, skip
+            if not comp.supports_direct_upgrades():
+                continue
+
             # for vers, versurl in all_versions[compid][::-1]:
             for vers, versurl in comp.versions[::-1]:
                 if not comp.is_goodfutureversion(vers):
