@@ -97,4 +97,4 @@ class NpmComponent(classComponent.Component):
         return -1
 
     def supports_direct_upgrades(self):
-        return True
+        return False
