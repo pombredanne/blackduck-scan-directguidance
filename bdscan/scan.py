@@ -7,7 +7,8 @@ import shutil
 
 from blackduck import Client
 
-from bdscan import bdoutput, utils, globals, asyncdata as asyncdata, classGitHubProvider, classAzureProvider
+from bdscan import bdoutput, utils, globals, asyncdata as asyncdata, classGitHubProvider, classAzureProvider, \
+    classGitLabProvider
 
 
 def process_bd_scan(output):
@@ -370,11 +371,11 @@ def main_process(output, runargs):
         print(f"BD-Scan-Action: Interfacing with GitHub")
         globals.scm_provider = classGitHubProvider.GitHubProvider()
     elif globals.args.scm == 'azure':
-        print(f"BD-Scan-Action: Interfacing with Azure DevOps ")
+        print(f"BD-Scan-Action: Interfacing with Azure DevOps")
         globals.scm_provider = classAzureProvider.AzureProvider()
     elif globals.args.scm == 'gitlab':
-        print(f"BD-Scan-Action: GitLab not supported yet")
-        sys.exit(1)
+        print(f"BD-Scan-Action: Interfacing with GitLab")
+        globals.scm_provider = classGitLabProvider.GitLabProvider()
     elif globals.args.scm == 'bitbucket':
         print(f"BD-Scan-Action: BitBucket Pipelines not supported yet")
         sys.exit(1)

@@ -70,7 +70,7 @@ class AzureProvider(classSCMProvider.SCMProvider):
 
         if globals.args.fix_pr and not self.azure_build_source_branch:
             print(f'BD-Scan-Action: ERROR: Azure DevOps requires that BUILD_SOURCEBRANCH be set'
-                  'when operating on a pull request')
+                  'when operating on a push')
             sys.exit(1)
 
 
