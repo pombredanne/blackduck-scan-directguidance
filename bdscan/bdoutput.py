@@ -65,7 +65,7 @@ def get_rapid_scan_results(output_dir, bd):
     if len(output_data) <= 0 or '_meta' not in output_data[0] or 'href' not in output_data[0]['_meta']:
         return None
 
-    developer_scan_url = output_data[0]['_meta']['href'] + "?limit=5000"
+    developer_scan_url = output_data[0]['_meta']['href'] + "?limit=1000"
     globals.printdebug("DEBUG: Developer scan href: " + developer_scan_url)
 
     # Handle limited lifetime of developer runs gracefully
@@ -104,8 +104,8 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
 
         dep_vulnerable = False
         # TODO: Revisit license violations
+        # if len(item['policyViolationVulnerabilities']) > 0:
         if len(item['policyViolationVulnerabilities']) > 0 or len(item['policyViolationLicenses']) > 0:
-        #if len(item['policyViolationVulnerabilities']) > 0:
             dep_vulnerable = True
 
         globals.printdebug(f"DEBUG: Component: {item['componentIdentifier']}")
@@ -147,7 +147,8 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
                 i = 0
                 projfile = ''
                 for p in path:
-                    if not p.endswith(tuple(['/' + s for s in comp.pms])) and not p.endswith(f'/{comp.pm}') and not p.startswith('http:detect/') and not p == proj and not re.match("http:.*\/%2F", p):
+                    if not p.endswith(tuple(['/' + s for s in comp.pms])) and not p.endswith(f'/{comp.pm}') \
+                            and not p.startswith('http:detect/') and not p == proj and not re.match("http:.*\/%2F", p):
                         path_mod.append(p)
                     elif p.endswith(f'/{comp.pm}'):
                         projfile = comp.get_projfile(p, allpoms)
@@ -167,7 +168,7 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
 
                 # Then log the direct dependencies directly
                 # childdep = comp.normalise_dep(comp.compid)
-                #if direct_dep != '' and dep_vulnerable:
+                # if direct_dep != '' and dep_vulnerable:
                 if dep_vulnerable:
                     dircomp = direct_vulnerable_clist.add(direct_dep)
 
@@ -187,7 +188,8 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
                                 break
 
                     if projfile_ok:
-                        if direct_vulnerable_clist.set_data_in_comp(direct_dep, 'projfiles', utils.remove_cwd_from_filename(projfile)):
+                        if direct_vulnerable_clist.set_data_in_comp(direct_dep, 'projfiles',
+                                                                    utils.remove_cwd_from_filename(projfile)):
                             direct_vulnerable_clist.set_data_in_comp(direct_dep, 'projfilelines', linenum)
 
     return dep_dict, direct_vulnerable_clist

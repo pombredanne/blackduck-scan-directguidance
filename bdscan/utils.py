@@ -160,7 +160,7 @@ def run_detect(jarfile, runargs, show_output):
 
 
 def get_comps(bd, pv):
-    comps = bd.get_json(pv + '/components?limit=5000')
+    comps = bd.get_json(pv + '/components?limit=1000')
     newcomps = []
     complist = []
     for comp in comps['items']:
