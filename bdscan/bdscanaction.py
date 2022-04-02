@@ -29,7 +29,8 @@ def main():
     parser.add_argument("--version", type=str, help="Project version name")
     parser.add_argument("--mode", default="rapid", type=str,
                         help="Black Duck scanning mode, either intelligent or rapid")
-    parser.add_argument("--output", default="blackduck-output", type=str, help="Output directory")
+    parser.add_argument("--output",
+                        default="blackduck-output", type=str, help="Scan output directory (deleted afterwards)")
     parser.add_argument("--fix_pr", type=str, default="false", help="Create Fix PRs for upgrades, true or false")
     parser.add_argument("--upgrade_major", type=str, default="false",
                         help="Offer upgrades to major versions, true or false")
@@ -37,8 +38,8 @@ def main():
                         help="Generate a comment on pull request, true or false")
     parser.add_argument("--sarif", type=str, help="SARIF output file")
     parser.add_argument("--incremental_results", default="false", type=str,
-                        help="Compare to previous intelligent scan project - only report & ix new/changed components")
-    parser.add_argument("--nocheck", type=str,
+                        help="Compare to previous intelligent scan project - only report & fix new/changed components")
+    parser.add_argument("--no_files_check", type=str,
                         help="Skip check of GH commit/PR for changed package manager config files")
     parser.add_argument("--detect_opts", type=str,
                         help="Passthrough options to Detect, comma delimited, exclude leading hyphens")
@@ -104,9 +105,9 @@ def main():
     if globals.args.incremental_results:
         print('  --incremental_results: Calculate incremental results (since last full/intelligent scan')
 
-    globals.args.nocheck = evaltrue(globals.args.nocheck)
-    if globals.args.nocheck:
-        print('  --nocheck              Skip check of GH commit/PR for changed package manager config files')
+    globals.args.no_files_check = evaltrue(globals.args.no_files_check)
+    if globals.args.no_files_check:
+        print('  --no_files_check       Skip check of GH commit/PR for changed package manager config files')
 
     # if globals.args.upgrade_indirect is None or globals.args.upgrade_indirect == 'false' or \
     #         globals.args.upgrade_indirect == '':
@@ -150,10 +151,11 @@ def main():
 
     print('-------------------------------------------------------------------------\n')
 
-    if isempty(globals.args.sarif) and not globals.args.comment_on_pr and not globals.args.fix_pr and \
-            globals.args.mode == 'rapid':
-        print("BD-Scan-Action: Nothing to do - specify at least 1 option from 'sarif, comment_on_pr, fix_pr'")
-        sys.exit(1)
+    # Removed to allow the github_event_name to define action if neither fix_pr or comment_on_pr
+    # if isempty(globals.args.sarif) and not globals.args.comment_on_pr and not globals.args.fix_pr and \
+    #         globals.args.mode == 'rapid':
+    #     print("BD-Scan-Action: Nothing to do - specify at least 1 option from 'sarif, comment_on_pr, fix_pr'")
+    #     sys.exit(1)
 
     if globals.args.fix_pr and globals.args.comment_on_pr:
         print("BD-Scan-Action: Cannot specify BOTH fix_pr and comment_on_pr - Exiting")
@@ -164,4 +166,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

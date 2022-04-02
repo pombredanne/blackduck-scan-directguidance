@@ -390,7 +390,7 @@ def main_process(output, runargs):
 
     globals.scm_provider.init()
 
-    if not globals.args.nocheck:
+    if not globals.args.no_files_check:
         if globals.args.fix_pr and not globals.scm_provider.check_files_in_commit():
             print('BD-Scan-Action: No package manager changes in commit - skipping dependency analysis')
             sys.exit(0)

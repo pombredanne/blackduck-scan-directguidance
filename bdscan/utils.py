@@ -2,13 +2,10 @@
 import os
 import sys
 import requests
-import semver
+# import semver
 # import tempfile
 from pathlib import Path
 
-# from BlackDuckUtils import NpmUtils
-# from BlackDuckUtils import MavenUtils
-# from BlackDuckUtils import NugetUtils
 from bdscan import bdoutput, bdio, globals
 
 import subprocess
@@ -160,7 +157,7 @@ def run_detect(jarfile, runargs, show_output):
 
 
 def get_comps(bd, pv):
-    comps = bd.get_json(pv + '/components?limit=1000')
+    comps = get_json(bd, pv + '/components')
     newcomps = []
     complist = []
     for comp in comps['items']:
@@ -432,3 +429,25 @@ def process_scan(scan_folder, bd):
 #             foundvers.append(verstring)
 #
 #     return foundvers
+
+def get_json(bd, url):
+    url += '?limit=1000'
+    more_data = True
+    all_data = None
+    start = 0
+    while more_data:
+        if start == 0:
+            req_url = url
+        else:
+            req_url = f"{url}&start={start}"
+        result = bd.get_json(req_url)
+        if start == 0:
+            all_data = result
+        else:
+            all_data['totalCount'] += result['totalCount']
+            all_data['items'].append(result['items'])
+        if result['totalCount'] < 999:
+            more_data = False
+        start += 1000
+
+    return all_data

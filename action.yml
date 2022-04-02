@@ -50,7 +50,7 @@ inputs:
   upgrade_major:
     description: "Recommend upgrade guidance to major, not just minor, versions"
     required: false
-  nocheck:
+  no_files_check:
     description: "Skip check of GH commit/PR for changed package manager config files"
     required: false
   detect_opts:
@@ -87,7 +87,7 @@ runs:
     - ${{ inputs.incremental_results }}
     - --upgrade_major
     - ${{ inputs.upgrade_major }}
-    - --nocheck
-    - ${{ inputs.nocheck }}
+    - --no_files_check
+    - ${{ inputs.no_files_check }}
     - --detect_opts
     - ${{ inputs.detect_opts }}

@@ -65,12 +65,12 @@ def get_rapid_scan_results(output_dir, bd):
     if len(output_data) <= 0 or '_meta' not in output_data[0] or 'href' not in output_data[0]['_meta']:
         return None
 
-    developer_scan_url = output_data[0]['_meta']['href'] + "?limit=1000"
+    developer_scan_url = output_data[0]['_meta']['href']
     globals.printdebug("DEBUG: Developer scan href: " + developer_scan_url)
 
     # Handle limited lifetime of developer runs gracefully
     try:
-        rapid_scan_results = bd.get_json(developer_scan_url)
+        rapid_scan_results = utils.get_json(bd, developer_scan_url)
     except Exception as e:
         print(
             f"BD-Scan-Action: ERROR: Unable to fetch developer scan '{developer_scan_url}' \
@@ -148,7 +148,7 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
                 projfile = ''
                 for p in path:
                     if not p.endswith(tuple(['/' + s for s in comp.pms])) and not p.endswith(f'/{comp.pm}') \
-                            and not p.startswith('http:detect/') and not p == proj and not re.match("http:.*\/%2F", p):
+                            and not p.startswith('http:detect/') and not p == proj and not re.match("http:.*/%2F", p):
                         path_mod.append(p)
                     elif p.endswith(f'/{comp.pm}'):
                         projfile = comp.get_projfile(p, allpoms)

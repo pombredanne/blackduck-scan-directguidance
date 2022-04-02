@@ -1,14 +1,14 @@
 import random
 import re
 import os
-import shutil
+# import shutil
 import sys
-import tempfile
+# import tempfile
 
 from bdscan import classSCMProvider
 from bdscan import globals
 
-from bdscan import utils
+# from bdscan import utils
 
 from github import Github
 
@@ -24,6 +24,7 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         self.github_sha = ''
         self.github_ref_type = ''
         self.github_ref_name = ''
+        self.github_event_name = ''
 
     def init(self):
         globals.printdebug(f"DEBUG: Initializing GitHub SCM Provider")
@@ -38,6 +39,8 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         globals.printdebug(f'GITHUB_REF_TYPE={self.github_ref_type}')
         self.github_ref_name = os.getenv("GITHUB_REF_NAME")
         globals.printdebug(f'GITHUB_REF_NAME={self.github_ref_name}')
+        self.github_event_name = os.getenv("GITHUB_EVENT_NAME")
+        globals.printdebug(f'GITHUB_EVENT_NAME={self.github_event_name}')
 
         if not self.github_token or not self.github_repo or not self.github_ref or not self.github_api_url \
                 or not self.github_sha:
@@ -45,6 +48,12 @@ class GitHubProvider(classSCMProvider.SCMProvider):
                   'GITHUB_API_URL, and GITHUB_SHA be set.')
             sys.exit(1)
 
+        # If neither fix_pr or comment_on_pr is set, then use github_event_name to set activity
+        if not globals.args.fix_pr and not globals.args.comment_on_pr:
+            if self.github_event_name == 'pull_request':
+                globals.args.comment_on_pr = True
+            elif self.github_event_name == 'push':
+                globals.args.fix_pr = True
         return True
 
     def comp_commit_file_and_create_fixpr(self, g, comp, files_to_patch):
@@ -263,7 +272,7 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         if globals.debug: print(f"DEBUG: Pull requests:")
 
         pull_number_for_sha = None
-        m = re.search('pull\/(.+?)\/', self.github_ref)
+        m = re.search('pull/(.+?)/', self.github_ref)
         if m:
             pull_number_for_sha = int(m.group(1))
 
