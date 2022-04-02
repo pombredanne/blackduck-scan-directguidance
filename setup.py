@@ -26,6 +26,7 @@ setuptools.setup(
         "requests",
         "semver",
         "lxml",
+        "azure-devops",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",

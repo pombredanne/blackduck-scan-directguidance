@@ -12,6 +12,7 @@ from bdscan import utils
 
 from github import Github
 
+
 class GitHubProvider(classSCMProvider.SCMProvider):
     def __init__(self):
         super().__init__()
@@ -21,6 +22,8 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         self.github_ref = ''
         self.github_api_url = ''
         self.github_sha = ''
+        self.github_ref_type = ''
+        self.github_ref_name = ''
 
     def init(self):
         globals.printdebug(f"DEBUG: Initializing GitHub SCM Provider")
@@ -31,6 +34,10 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         self.github_api_url = os.getenv("GITHUB_API_URL")
         self.github_sha = os.getenv("GITHUB_SHA")
         globals.printdebug(f'GITHUB_SHA={self.github_sha}')
+        self.github_ref_type = os.getenv("GITHUB_REF_TYPE")
+        globals.printdebug(f'GITHUB_REF_TYPE={self.github_ref_type}')
+        self.github_ref_name = os.getenv("GITHUB_REF_NAME")
+        globals.printdebug(f'GITHUB_REF_NAME={self.github_ref_name}')
 
         if not self.github_token or not self.github_repo or not self.github_ref or not self.github_api_url \
                 or not self.github_sha:
@@ -44,6 +51,10 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         if len(files_to_patch) == 0:
             print('BD-Scan-Action: WARN: Unable to apply fix patch - cannot determine containing package file')
             return False
+        if self.github_ref_type != 'branch':
+            print('BD-Scan-Action: WARN: Unable to apply fix patch - github_ref_type is not branch')
+            return False
+
         globals.printdebug(f"DEBUG: Look up GitHub repo '{self.github_repo}'")
         repo = g.get_repo(self.github_repo)
         globals.printdebug(repo)
@@ -88,7 +99,7 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         globals.printdebug(pr_body)
         pr = repo.create_pull(title=f"Black Duck: Upgrade {comp.name} to version "
                                     f"{comp.goodupgrade} fix known security vulerabilities",
-                              body=pr_body, head=new_branch_name, base="master")
+                              body=pr_body, head=new_branch_name, base=self.github_ref_name)
         return True
 
     def comp_fix_pr(self, comp):

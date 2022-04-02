@@ -1,24 +1,64 @@
 # [PROTOTYPE] Black Duck Scan Action
 A [GitHub Action](https://github.com/features/actions) for launching a Black Duck scan as part of a GitHub CI/CD workflow, offering a number of workflow use cases:
 - Break the build if a security policy is not met
-- Run rapid, incremental scans on a pull request, optionally only reporting newly introduced components
+- Run rapid (dependency) scan 
+- Compare scan against previous full scan for same project/version (optionally report only changed components)
 - Leave comments on a pull request that identify vulnerable components and offer upgrade guidance
+- Open fix pull requests for vulnerable components with an available upgrade (for npm/lerna/yarn/maven/nuget package managers)
 - Import Black Duck vulnerabilities as code scanning alerts via SARIF
-- Open fix pull requests for vulnerable components with an available upgrade
 
 This script is provided under an OSS license (specified in the LICENSE file) and has been developed by Synopsys field engineers as a contribution to the Synopsys user community. Please direct questions and comments to the [Black Duck Integrations Forum](https://community.synopsys.com/s/topic/0TO34000000gGZnGAM/black-duck-integrations) in the Synopsys user community.
 
-The following technology stacks are currently supported:
-- Javascript.Node.js/NPM
-- Java/Maven
-- .NET/NuGet
+## Overview
+
+This action uses Black Duck rapid scan to identify vulnerable direct dependencies supporting multiple package managers (including maven, npm, nuget, yarn, lerna, cargo, conan, gradle, python, pypi, pip etc.).
+
+Vulnerable direct dependencies can be reported in SARIF (for import as code scanning alerts) or as comments in pull requests.
+
+For specific package managers (npm, lerna, yarn, nuget, maven), it can also generate automatic fix Pull Requests to upgrade vulnerable direct dependencies to address identified vulnerabilities.
+
+Scans can be compared against previous full (intelligent) scans of the same project version, with the option to only report changed components.
 
 ## Usage
 
 The action runs as a Docker container, supporting GitHub-hosted and Self-hosted Linux runners.
 
-The action has 3 independent modes of operation intended to be used for different GitHub activities:
-- Add a comment on a Pull Request 
+The action has several independent modes of operation intended to be used with different GitHub activities:
+1. Produce SARIF output of vulnerable direct dependencies for import as code scanning alerts in Github
+2. For a Pull Request, add a comment listing vulnerable direct dependencies with upgrade guidance
+3. For a Commit/Push, create fix Pull Requests for each vulnerable direct dependency where an upgrade can be determined
+
+Mode 1 (SARIF production) can be used standalone or optionally combined with modes 2 or 3.
+Modes 2 and 3 are mutually exclusive (and should be defined as separate steps in the Action workflow).
+
+Additional options for the Action include:
+- upgrade_major true: Allow upgrades for future major releases (default is to only report upgrades within the same major release)
+- incremental_results true: Only report vulnerable direct dependencies which have been changed since the last full scan
+- nocheck true: Skip checking that modified package manager config file is included in PR or commit
+- debug N: Show debug messages (integer value above 0)
+
+Other options are used to manage the Black Duck scan including:
+- url BD_URL: Black Duck server URL including https:// (can also be specified in BLACKDUCK_URL environment variable)
+- token BD_TOKEN: Black Duck API token (can also be specified in BLACKDUCK_API_TOKEN environment variable)
+- trustcert true: Ignore Black Duck server certificate
+- output FOLDER: temporary folder for Black Duck scans (default 'blackduck-output')
+- project PROJECT: Black Duck project name
+- version VERSION: Black Duck version name
+- mode MODE: Scan mode ('rapid' or 'intelligent' - default 'rapid')
+- detect_opts OPTION=VALUE,OPTION=VALUE: List of additional Synopsys Detect options, comma delimited without leading hyphens, no spaces
+
+## Prerequisites
+
+Please ensure the following prerequisites are met before using this action:
+
+1. Access to a Black Duck Professional or Security Edition server
+2. At least 1 policy has been created in the Black Duck server configured for Rapid scans and covering security vulnerabilities
+3. API Token has been generated with permission to run scans
+4. Repos to be scanned are ready to be built and have 
+
+## Generate SARIF for code scanning alerts
+
+The following step shws
 
 You can use the Action as follows:
 

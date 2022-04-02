@@ -366,6 +366,9 @@ version '{project_baseline_version}' - cannot calculate incremental results")
 def main_process(output, runargs):
     globals.scm_provider = None
 
+    if globals.debug > 0:
+        print('\n'.join([f'{k}: {v}' for k, v in sorted(os.environ.items())]))
+
     if globals.args.scm == 'github':
         print(f"BD-Scan-Action: Interfacing with GitHub")
         globals.scm_provider = classGitHubProvider.GitHubProvider()
