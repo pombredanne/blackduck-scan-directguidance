@@ -48,7 +48,7 @@ class NugetComponent(classComponent.Component):
   </ItemGroup>
 '''
         try:
-            with open('test.csproj', "w") as fp:
+            with open('test.csproj', "a") as fp:
                 fp.write(proj_contents)
         except Exception as e:
             print(e)

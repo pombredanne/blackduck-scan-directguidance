@@ -44,6 +44,7 @@ github_ref = ''
 github_api_url = ''
 github_sha = ''
 
+# policy_sevs = ['UNSPECIFIED', 'TRIVIAL', 'MINOR', 'MAJOR', 'CRITICAL', 'BLOCKER']
 
 def printdebug(dstring):
     if debug > 0:

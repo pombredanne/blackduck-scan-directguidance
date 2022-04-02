@@ -463,8 +463,8 @@ class ComponentList:
             md_lic_table_string += comp.md_lic_table()
 
         # Sort main table here
-        md_main_table = sorted(md_main_table, key=itemgetter(4), reverse=True)
         md_main_table = sorted(md_main_table, key=itemgetter(6), reverse=True)
+        md_main_table = sorted(md_main_table, key=itemgetter(4), reverse=True)
 
         sep = ' | '
         md_main_table_string = ''

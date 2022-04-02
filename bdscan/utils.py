@@ -432,22 +432,14 @@ def process_scan(scan_folder, bd):
 
 def get_json(bd, url):
     url += '?limit=1000'
-    more_data = True
-    all_data = None
-    start = 0
-    while more_data:
-        if start == 0:
-            req_url = url
-        else:
-            req_url = f"{url}&start={start}"
+    result = bd.get_json(url)
+    all_data = result
+    total = result['totalCount']
+    downloaded = 1000
+    while total > downloaded:
+        req_url = f"{url}&offset={downloaded}"
         result = bd.get_json(req_url)
-        if start == 0:
-            all_data = result
-        else:
-            all_data['totalCount'] += result['totalCount']
-            all_data['items'].append(result['items'])
-        if result['totalCount'] < 999:
-            more_data = False
-        start += 1000
+        all_data['items'] = all_data['items'] + result['items']
+        downloaded += 1000
 
     return all_data

@@ -104,25 +104,12 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
 
         dep_vulnerable = False
         # TODO: Revisit license violations
-        # if len(item['policyViolationVulnerabilities']) > 0:
-        if len(item['policyViolationVulnerabilities']) > 0 or len(item['policyViolationLicenses']) > 0:
+        if len(item['policyViolationVulnerabilities']) > 0:
+        # if len(item['policyViolationVulnerabilities']) > 0 or len(item['policyViolationLicenses']) > 0:
             dep_vulnerable = True
 
         globals.printdebug(f"DEBUG: Component: {item['componentIdentifier']}")
         globals.printdebug(item)
-
-        # comp_ns, comp_name, comp_version = Utils.parse_component_id(item['componentIdentifier'])
-
-#         # If comparing to baseline, look up in cache and continue if already exists
-#         if incremental and item['componentName'] in baseline_comp_cache:
-#             if (item['versionName'] in baseline_comp_cache[item['componentName']] and
-#                     baseline_comp_cache[item['componentName']][item['versionName']] == 1):
-#                 globals.printdebug(f"DEBUG:   Skipping component {item['componentName']} \
-# version {item['versionName']} because it was already seen in baseline")
-#                 continue
-#             else:
-#                 globals.printdebug(f"DEBUG:   Including component {item['componentName']} \
-# version {item['versionName']} because it was not seen in baseline")
 
         comp = allcomps_clist.add(item['componentIdentifier'])
 

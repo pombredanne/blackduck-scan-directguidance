@@ -388,7 +388,9 @@ def main_process(output, runargs):
         print(f"BD-Scan-Action: ERROR: Specified SCM '{globals.args.scm}' not supported yet")
         sys.exit(1)
 
-    globals.scm_provider.init()
+    if not globals.scm_provider.init():
+        print('BD-Scan-Action: No action defined - nothing to do')
+        sys.exit(0)
 
     if not globals.args.no_files_check:
         if globals.args.fix_pr and not globals.scm_provider.check_files_in_commit():

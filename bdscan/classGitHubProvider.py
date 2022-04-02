@@ -48,12 +48,21 @@ class GitHubProvider(classSCMProvider.SCMProvider):
                   'GITHUB_API_URL, and GITHUB_SHA be set.')
             sys.exit(1)
 
-        # If neither fix_pr or comment_on_pr is set, then use github_event_name to set activity
-        if not globals.args.fix_pr and not globals.args.comment_on_pr:
+        # If no action set in options, then use github_event_name to set activity
+        if not globals.args.fix_pr and not globals.args.comment_on_pr and not globals.args.sarif:
             if self.github_event_name == 'pull_request':
                 globals.args.comment_on_pr = True
             elif self.github_event_name == 'push':
                 globals.args.fix_pr = True
+            else:
+                return False
+        elif self.github_event_name is not None and self.github_event_name != '':
+            # Check the specified action matches the event_name
+            if globals.args.fix_pr and self.github_event_name != 'push':
+                return False
+            if globals.args.comment_on_pr and self.github_event_name != 'pull_request':
+                return False
+
         return True
 
     def comp_commit_file_and_create_fixpr(self, g, comp, files_to_patch):

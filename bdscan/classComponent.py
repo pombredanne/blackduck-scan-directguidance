@@ -14,7 +14,7 @@ class Component:
     def __init__(self, compid, name, version, ns):
         self.ns = ns
         self.pm = ns
-        self.pms = [ ns ]
+        self.pms = [ns]
         self.org = ''  # Used in Maven
         self.name = name
         self.version = version
@@ -83,7 +83,7 @@ class Component:
         self.origins[ver] = data
 
     def get_num_vulns(self):
-        return len(self.vulns.keys())
+        return len(self.vulns.keys()) + len(self.childvulns.keys())
 
     def check_ver_origin(self, ver):
         if len(self.origins) > 0 and ver in self.origins.keys():
@@ -111,7 +111,7 @@ class Component:
 
         #
         # Find the initial upgrade (either latest in current version major range or guidance_short)
-        if (len(self.upgradeguidance) > 0):
+        if len(self.upgradeguidance) > 0:
             v_guidance_short = self.check_version_is_release(self.upgradeguidance[0])
             v_guidance_long = self.check_version_is_release(self.upgradeguidance[1])
         else:
@@ -124,7 +124,7 @@ class Component:
             verstring, guidance_major_last = Component.find_next_ver(
                 self, future_vers, v_curr.major, v_curr.minor, v_curr.patch)
         else:
-            if (len(self.upgradeguidance) > 0):
+            if len(self.upgradeguidance) > 0:
                 verstring = self.upgradeguidance[0]
             else:
                 verstring = None
@@ -184,7 +184,7 @@ class Component:
 
         # sort the table here
         # TODO
-        #md_comp_lic_table = sorted(md_comp_lic_table, key=itemgetter(3), reverse=True)
+        # md_comp_lic_table = sorted(md_comp_lic_table, key=itemgetter(3), reverse=True)
 
         sep = ' | '
         md_table_string = ''
@@ -193,7 +193,6 @@ class Component:
 
         # Do not prepend header, unlike vulnerabilities this will all be summarized
         return md_table_string
-
 
     def shorttext(self):
         if len(self.vulns) > 0 and len(self.childvulns) > 0:
@@ -304,7 +303,7 @@ class Component:
             return None
 
         tempver = re.sub('[A-Za-z_-]+\d*$', '', ver.lower())
-        tempver = re.sub('^\D+', '',tempver)
+        tempver = re.sub('^\D+', '', tempver)
         tempver = re.sub('[_-]+', '.', tempver)
 
         arr = tempver.split('.')
@@ -362,12 +361,13 @@ class Component:
                 return False
         if shortguidance_semver is not None:
             if future_semver.major < shortguidance_semver.major:
-                ok = False
+                return False
             elif future_semver.major == shortguidance_semver.major:
                 if future_semver.minor < shortguidance_semver.minor:
-                    ok = False
-                elif future_semver.minor == shortguidance_semver.minor and future_semver.patch < shortguidance_semver.patch:
-                    ok = False
+                    return False
+                elif future_semver.minor == shortguidance_semver.minor and \
+                        future_semver.patch < shortguidance_semver.patch:
+                    return False
 
         return True
 
