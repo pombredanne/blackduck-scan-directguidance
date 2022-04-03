@@ -21,7 +21,7 @@ The utility supports a primary list of package managers:
 - Maven
 - NuGet
 
-Projects using one or more of the primary package managers can utilise all features as shown below, deployed as a GitHub Action and using a pre-built container downloaded in the run.
+Projects built with one or more of the primary package managers can utilise all features as shown below, deployed as a GitHub Action and using a pre-built container downloaded in the run.
 This deployment supports the calculation of upgrade guidance for direct dependencies which includes validation that all indirect (transitive) dependencies are also resolved by upgrade.
 It will optionally create a comment within a Pull Request or create fix PRs within commits/pushes for the vulnerable direct dependencies.
 
@@ -46,12 +46,11 @@ For all package managers, the following prerequisites are required:
 - The following repository secrets must be configured:
   - BLACKDUCK_URL - full URL to Black Duck server (e.g. `https://server.blackduck.synopsys.com`)
   - BLACKDUCK_API_TOKEN - Black Duck API Token including scan permissions
-- Ensure that the correct options to use Synopsys Detect have been specified (either as environment variables or using the `detect_opts` parameter) to support dependency scanning. For example, you may need to modify the package manager search depth, or exclude specific package managers.
+- Ensure additional options to run successful Synopsys Detect dependency scans have been specified (either as environment variables or using the `detect_opts` parameter). For example, you may need to modify the package manager search depth, or exclude specific package managers.
 
 For the secondary package managers:
 - Only Linux runners are supported
 - Ensure the required package manager(s) are installed and available on the PATH within the Action
-- Ensure python is installed (see below)
 
 ## Usage
 
@@ -62,7 +61,7 @@ The action has 3 independent modes of operation intended to be used for differen
 - For a Commit/Push, if there are security policy violations, create fix Pull Requests to upgrade the vulnerable direct dependencies (only for the primary package managers listed above) and set the check status 
 - For any activity, if there are security policy violations, create a SARIF output file for import as code security issues in Github (all supported package managers)
 
-You should add the steps required to run the action for the specific scenarios you wish to support.
+Add steps to run the utility for the specific scenarios you wish to support.
 
 ## Github Action for Primary Package Managers
 
@@ -81,13 +80,14 @@ The following step would need to be added to a Github Action for projects using 
         GITHUB_TOKEN: ${{ github.token }}
 ```
 
-See below for a full description of all available parameters.
+See below for full descriptions of all available parameters.
 
 ## Creating SARIF for Import as GitHub Code Scanning Alerts - Primary Package Managers
 
-This operation mode will create a GitHUb SARIF output file documenting vulnerable direct dependencies (and vulnerable child dependencies) for the primary package managers listed above.
+This operation mode will create a GitHub SARIF output file documenting vulnerable direct dependencies (and vulnerable child dependencies) for the primary package managers listed above.
 
-The `sarif` parameter is used to indicate that a SARIF file should be created. Not that specifying the `sarif` parameter will stop the other operation modes from running by default. Specifying the parameters `fix_pr` or `comment_on_pr` will run these modes, but you would need to run them within the specific event types.
+The `sarif` parameter is used to indicate that a SARIF file should be created. Note that specifying the `sarif` parameter will stop the other operation modes from running by default.
+See the FAQs below for how to run the other operation modes in addition to SARIF output.
 
 The following step would need to be added to a Github Action to create the SARIF file `blackduck-sarif.json`:
 
@@ -208,9 +208,60 @@ The fix Pull Request operation mode is not supported for secondary package manag
 
 For questions and comments, please contact us via the [Polaris Integrations Forum](https://community.synopsys.com/s/topic/0TO2H000000gM3oWAE/polaris-integrations).
 
-# Troubleshooting
-## Issue 1
-xxxx
+# FAQs
+## How to set the BD project/version names in scans
+The project and version names are not required for Rapid scans unless you want to compare the scan against a previous Full scan.
+If so, use the `detect_opts` paramater to specify additional scan arguments, for example:
+```yaml
+    - name: Black Duck security scan
+      uses: matthewb66/blackduck-scan-directguidance@v4
+      with:
+        url: ${{ secrets.BLACKDUCK_URL }}
+        token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+        upgrade_major: true
+        detect_opts: detect.project.name=MYPROJECT,detect.project.version.name=MYVERSION
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+```
 
-## Issue 2
-xxxx
+## The scan is empty
+Black Duck Rapid scan looks for supported package manager config files in the top-level folder of the repo.
+If your project only has config files in sub-folders, use the parameter `detect_opts` to specify the scan option `detect.detector.search.depth=1`. Change the depth depending on the folder depth to traverse (a value of 1 would indicate 1 level of sub-folders).
+
+## Cannot connect to Black Duck server due to certificate issues
+Set the parameter `trustcert` to `true` to accept the unsigned server certificate
+
+## How to output SARIF and Fix PR or Comment on PR operation modes together
+By default the action event-type defines what operation mode will be run.
+Specifying the paramater `sarif` will stop the other operation modes from running.
+If you wish to output SARIF in addition to comment on PR in the same step, use the following step logic:
+
+```yaml
+    - name: Black Duck security scan for Pull Request
+      if: ${{github.event_name == 'pull_request'}}
+      uses: matthewb66/blackduck-scan-directguidance@v3
+      with:
+        url: ${{ secrets.BLACKDUCK_URL }}
+        token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+        comment_on_pr: true
+        upgrade_major: true
+        sarif: blackduck-sarif.json  
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+```
+
+If you wish to output SARIF in addition to fix PR in the same step, use the following step logic:
+
+```yaml
+    - name: Black Duck security scan for Pull Request
+      if: ${{github.event_name == 'push'}}
+      uses: matthewb66/blackduck-scan-directguidance@v3
+      with:
+        url: ${{ secrets.BLACKDUCK_URL }}
+        token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+        fix_pr: true
+        upgrade_major: true
+        sarif: blackduck-sarif.json  
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+```
