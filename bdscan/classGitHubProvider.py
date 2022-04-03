@@ -313,6 +313,10 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         commit = repo.get_commit('HEAD')
         globals.printdebug(commit)
 
+        if commit.commit.message.find('-snps-fix-pr-'):
+            # Check if this commit is from a previous run of this action and skip if so
+            return False
+
         found = False
         for commit_file in commit.files:
             if os.path.basename(commit_file.filename) in globals.pkg_files:
