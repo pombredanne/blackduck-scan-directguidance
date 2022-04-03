@@ -92,7 +92,7 @@ See the FAQs below for how to run the other operation modes in addition to SARIF
 The following step would need to be added to a Github Action to create the SARIF file `blackduck-sarif.json`:
 
 ```yaml
-    - name: Black Duck security scan
+    - name: Black Duck security scan SARIF
       uses: matthewb66/blackduck-scan-directguidance@v4
       with:
         url: ${{ secrets.BLACKDUCK_URL }}
@@ -113,10 +113,8 @@ You could then add the following additional step to import the SARIF file as cod
         files: "blackduck-sarif.json"
     - name: Upload SARIF file
       if: steps.check_files.outputs.files_exists == 'true'
- #     if: ${{github.event_name == 'pull_request'}}
       uses: github/codeql-action/upload-sarif@v1
       with:
-        # Path to SARIF file relative to the root of the repository
         sarif_file: blackduck-sarif.json
 ```
 
@@ -142,46 +140,43 @@ The Black Duck Scanning action has a number of input parameters that can be pass
 The following YAML file shows the usage of the scan action for multiple workflows within an Action including the ability to run a full (intelligent) scan manually:
 
 ```yaml
-name: Scan a project with Black Duck
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:
-
-jobs:
-  blackduck:
-    runs-on: ubuntu-latest
-    steps:
-    
-    - name: Checkout the code
-      uses: actions/checkout@v2
+  name: Scan a project with Black Duck
+  
+  on:
+    push:
+      branches: [ main ]
+    pull_request:
+      branches: [ main ]
+    workflow_dispatch:
+  
+  jobs:
+    blackduck:
+      runs-on: ubuntu-latest
+      steps:
       
-    # Runs a Black Duck intelligent scan on commits to master
-    # This will run a "full" or "intelligent" scan, logging new components in the Black Duck Hub server
-    # in order to provide real time notifications when new vulnerabilities are reported.
-    - name: Run Baseline Black Duck Scan (manual, workflow dispatch)
-      if: ${{github.event_name == 'workflow_dispatch'}}
-      uses: matthewb66/blackduck-scan-directguidance@v4
-      with:
-        url: ${{ secrets.BLACKDUCK_URL }}
-        token: ${{ secrets.BLACKDUCK_API_TOKEN }}
-        mode: intelligent
+      - name: Checkout the code
+        uses: actions/checkout@v2
         
-    # Runs a Black Duck rapid scan
-    - name: Run Black Duck security scan (push)
-      uses: synopsys-sig-community/blackduck-scan-action@v4
-      with:
-        url: ${{ secrets.BLACKDUCK_URL }}
-        token: ${{ secrets.BLACKDUCK_API_TOKEN }}
-        # Generate SARIF output
-      # Must continue on error in order to reach SARIF import
-      continue-on-error: true
-      env:
-        # Pass the GitHub token to the script in order to create PRs
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
+      # Runs a Black Duck intelligent scan manually
+      # This will run a "full" or "intelligent" scan, logging new components in the Black Duck Hub server
+      # in order to provide real time notifications when new vulnerabilities are reported.
+      - name: Run Baseline Black Duck Scan (manual, workflow dispatch)
+        if: ${{github.event_name == 'workflow_dispatch'}}
+        uses: matthewb66/blackduck-scan-directguidance@v4
+        with:
+          url: ${{ secrets.BLACKDUCK_URL }}
+          token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+          mode: intelligent
+          
+      # Runs a Black Duck rapid scan for pull request/commit/push
+      - name: Run Black Duck security scan on PR/commit/push
+        uses: synopsys-sig-community/blackduck-scan-action@v4
+        with:
+          url: ${{ secrets.BLACKDUCK_URL }}
+          token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+        env:
+          # Pass the GitHub token to the script in order to create PRs
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
 ```
 
 ## Secondary Package Managers - Usage
