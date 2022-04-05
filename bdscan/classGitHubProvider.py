@@ -278,7 +278,7 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         pulls = repo.get_pulls(state='open', sort='created', base=repo.default_branch, direction="desc")
         pr = None
         pr_commit = None
-        if globals.debug: print(f"DEBUG: Pull requests:")
+        globals.printdebug(f"DEBUG: Pull requests:")
 
         pull_number_for_sha = None
         m = re.search('pull/(.+?)/', self.github_ref)
@@ -313,8 +313,9 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         commit = repo.get_commit('HEAD')
         globals.printdebug(commit)
 
-        if commit.commit.message.find('-snps-fix-pr-'):
+        if self.github_event_name == 'push' and commit.commit.message.find('Synopsys Black Duck Auto Pull Request') > 0:
             # Check if this commit is from a previous run of this action and skip if so
+            globals.printdebug(f"DEBUG: Comment {commit.commit.message} encountered - will skip scan on push")
             return False
 
         found = False
