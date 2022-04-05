@@ -170,7 +170,7 @@ The following YAML file shows the usage of the scan action for multiple workflow
           
       # Runs a Black Duck rapid scan for pull request/commit/push
       - name: Run Black Duck security scan on PR/commit/push
-        uses: synopsys-sig-community/blackduck-scan-action@v4
+        uses: matthewb66/blackduck-scan-directguidance@v4
         with:
           url: ${{ secrets.BLACKDUCK_URL }}
           token: ${{ secrets.BLACKDUCK_API_TOKEN }}
@@ -234,7 +234,7 @@ If you wish to output SARIF in addition to comment on PR in the same step, use t
 ```yaml
     - name: Black Duck security scan for Pull Request
       if: ${{github.event_name == 'pull_request'}}
-      uses: matthewb66/blackduck-scan-directguidance@v3
+      uses: matthewb66/blackduck-scan-directguidance@v4
       with:
         url: ${{ secrets.BLACKDUCK_URL }}
         token: ${{ secrets.BLACKDUCK_API_TOKEN }}
@@ -250,7 +250,7 @@ If you wish to output SARIF in addition to fix PR in the same step, use the foll
 ```yaml
     - name: Black Duck security scan for Pull Request
       if: ${{github.event_name == 'push'}}
-      uses: matthewb66/blackduck-scan-directguidance@v3
+      uses: matthewb66/blackduck-scan-directguidance@v4
       with:
         url: ${{ secrets.BLACKDUCK_URL }}
         token: ${{ secrets.BLACKDUCK_API_TOKEN }}
