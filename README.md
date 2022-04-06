@@ -36,6 +36,25 @@ This deployment supports identifying vulnerable direct dependencies with transit
 
 The utility can support multiple package managers in a single project, although you need to ensure you choose the correct mode (primary or secondary package managers) based on the full list. For example, if you have a project using Maven, npm and Pypi, you will need to use the secondary package manager operation mode throughout, unless you specify Synopsys Detect options to exclude the secondary package managers (in this case pypi).
 
+The following table shows the functionality available for the supported package managers:
+
+| Package Manager | Comment on Pull Request | Create Fix PRs for vulnerable direct dependencies | Provide upgrade guidance including transitive dependencies | Output SARIF for code security check |
+|-----|---|---|---|---|
+| npm    | yes | yes | yes | yes | 
+| lerna  | yes | yes | yes | yes |  
+| yarn   | yes | yes | yes | yes | 
+| pnpm   | yes | yes | yes | yes |
+| nuget  | yes | yes | yes | yes |
+| maven  | yes | yes | yes | yes |
+| conan  | yes |  |  | yes |
+| conda  | yes |  |  | yes |
+| dart   | yes |  |  | yes |
+| golang | yes |  |  | yes |
+| hex    | yes |  |  | yes |
+| pypi   | yes |  |  | yes |
+|  |  |  |  |  |
+| Event Type | pull_request | push | all | all |
+
 # Configuration
 
 ## Prerequisites
@@ -132,7 +151,7 @@ The Black Duck Scanning action has a number of input parameters that can be pass
 | sarif               | blackduck-sarif.json | Output results in SARIF file suitable for import into GitHub as code scanning alerts                                                                                                                                   |
 | incremental_results | false                | Set to `true` to filter the output to only report on newly introduced components (do not report on any vulnerabilities on component versions previously detected in the project)                                       |
 | debug               | 0                    | Set to value `9` to see debug messages from the action                                                                                                                                                                 |
-| no_files_check      | false                | Skip the validation of the changed files - by default this check will terminate the action if no package manager config files have been changed in the coomit/pull request                                             |
+| no_files_check      | false                | Skip the validation of the changed files - by default this check will terminate the action if no package manager config files have been changed in the commit/pull request                                             |
 | detect_opts         | N/A                  | Add Synopsys Detect scan options in a comma-delimited list (e.g. `detect.detector.buildless=true,detect.maven.buildless.legacy.mode=false`)                                                                            | 
 
 ## Overall Example Yaml - Primary Package Managers
