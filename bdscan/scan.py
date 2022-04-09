@@ -402,6 +402,9 @@ def main_process(output, runargs):
             sys.exit(0)
 
     # Run DETECT
+    if globals.args.incremental_results and globals.args.mode == "rapid":
+        runargs.append("--detect.blackduck.rapid.compare.mode=BOM_COMPARE")
+
     print(f"BD-Scan-Action: INFO: Running Black Duck detect with the following options: {runargs}")
     pvurl, projname, vername, detect_return_code = utils.run_detect(globals.detect_jar, runargs, True)
     if detect_return_code > 0 and detect_return_code != 3:

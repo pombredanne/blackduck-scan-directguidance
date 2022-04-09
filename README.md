@@ -86,7 +86,7 @@ Add steps to run the utility for the specific scenarios you wish to support.
 
 Adding the utility as a GitHub Action will support creating comments on Pull Requests or creating fix PRs to upgrade vulnerable direct dependencies for the primary package managers. The action can also fail the code scan check.
 
-The following step would need to be added to a Github Action for projects using the primary package managers:
+The following step would need to be added to a Github Action for projects using the primary package managers and will run as a Docker action:
 
 ```yaml
     - name: Black Duck security scan
@@ -105,10 +105,10 @@ See below for full descriptions of all available parameters.
 
 This operation mode will create a GitHub SARIF output file documenting vulnerable direct dependencies (and vulnerable child dependencies) for the primary package managers listed above.
 
-The `sarif` parameter is used to indicate that a SARIF file should be created. Note that specifying the `sarif` parameter will stop the other operation modes from running by default.
+The `sarif` parameter is used to indicate that a SARIF file should be created. Note that specifying the `sarif` parameter will stop the other operation modes (`fix_pr` or `comment_on_pr`) from running automatically (see the FAQs below for how to output SARIF and run the other modes together).
 See the FAQs below for how to run the other operation modes in addition to SARIF output.
 
-The following step would need to be added to a Github Action to create the SARIF file `blackduck-sarif.json`:
+The following step would need to be added to a Github Action to create the SARIF file `blackduck-sarif.json` and will run as a Docker action:
 
 ```yaml
     - name: Black Duck security scan SARIF
@@ -149,7 +149,7 @@ The Black Duck Scanning action has a number of input parameters that can be pass
 | fix_pr              | false                | Generate a fix pull request if a vulnerable componenent has an available upgrade path  - if specified and set to true, will override the automatic detection of the event type and stop PR comments from being created |
 | upgrade_major       | false                | Include upgrades that are beyond the current major version of the component being used - note, this can introduce a breaking change if the component's APIs are sufficiently different                                 |
 | sarif               | blackduck-sarif.json | Output results in SARIF file suitable for import into GitHub as code scanning alerts                                                                                                                                   |
-| incremental_results | false                | Set to `true` to filter the output to only report on newly introduced components (do not report on any vulnerabilities on component versions previously detected in the project)                                       |
+| incremental_results | false                | Set to `true` to filter the output to only report on newly introduced components (uses the --detect.blackduck.rapid.compare.mode=BOM_COMPARE option and compares configured policies against the previous full scan)   |
 | debug               | 0                    | Set to value `9` to see debug messages from the action                                                                                                                                                                 |
 | no_files_check      | false                | Skip the validation of the changed files - by default this check will terminate the action if no package manager config files have been changed in the commit/pull request                                             |
 | detect_opts         | N/A                  | Add Synopsys Detect scan options in a comma-delimited list (e.g. `detect.detector.buildless=true,detect.maven.buildless.legacy.mode=false`)                                                                            | 
@@ -200,8 +200,10 @@ The following YAML file shows the usage of the scan action for multiple workflow
 
 ## Secondary Package Managers - Usage
 
-If you are scanning a project using at least one secondary package manager (see list above), then you need to deploy this utility as a Python package.
+If you are scanning a project which uses at least one secondary package manager (see list above), then you need to deploy this utility as a Python package.
 The fix Pull Request operation mode is not supported for secondary package managers, and any upgrade guidance is limited to the individual package (will not include upgrading any vulnerable child dependencies).
+
+The following YAML extract will add the scan utility as a step running as a python package installed locally:
 
 ```yaml
   - name: Set up Python 3.9
@@ -220,7 +222,8 @@ The fix Pull Request operation mode is not supported for secondary package manag
 
 # Support
 
-For questions and comments, please contact us via the [Polaris Integrations Forum](https://community.synopsys.com/s/topic/0TO2H000000gM3oWAE/polaris-integrations).
+For questions and comments, please contact us via the [Black Duck Integrations Forum](https://community.synopsys.com/s/topic/0TO34000000gGZnGAM/black-duck-integrations).
+Issues can also be raised in GitHub.
 
 # FAQs
 ## How to set the BD project/version names in scans

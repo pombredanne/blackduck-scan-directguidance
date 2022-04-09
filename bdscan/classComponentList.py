@@ -17,13 +17,13 @@ from bdscan import utils, globals
 class ComponentList:
     md_directdeps_header = \
         f"\n## SUMMARY Direct Dependencies with vulnerabilities:\n\n" \
-        f"| Direct Dependency | Changed | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns | " \
+        f"| Direct Dependency | Total Vulns | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns | " \
         f"Max Indirect Vuln Severity | Upgrade to |\n| --- | --- | --- | --- | --- | --- | --- |\n"
 
     md_comp_lic_hdr = \
         "\n## SUMMARY License violations:\n\n" \
-        "| Parent | Child Component | License | Policy Violated | Direct Dep Changed |\n" \
-        "| --- | --- | --- | --- | --- |\n"
+        "| Parent | Child Component | License | Policy Violated |\n" \
+        "| --- | --- | --- | --- |\n"
 
     def __init__(self):
         self.compids = []
@@ -286,7 +286,7 @@ class ComponentList:
                             str(vuln['overallScore']),
                             vuln['violatingPolicies'][0]['policyName'],
                             desc,
-                            changed
+                            # changed
                         ]
                     if parent and vuln['name'] not in existing_vulns:
                         comp.add_vuln(name, vuln_item)
@@ -330,7 +330,7 @@ class ComponentList:
                         f"{child_name}/{child_ver}",
                         licname,
                         lic['violatingPolicies'][0]['policyName'],
-                        changed
+                        # changed
                     ]
                     if parent and lic['name'] not in existing_lic_violations:
                         comp.add_lic_violation(name, lic_item)
@@ -463,8 +463,8 @@ class ComponentList:
             md_lic_table_string += comp.md_lic_table()
 
         # Sort main table here
-        md_main_table = sorted(md_main_table, key=itemgetter(6), reverse=True)
-        md_main_table = sorted(md_main_table, key=itemgetter(4), reverse=True)
+        md_main_table = sorted(md_main_table, key=itemgetter(3), reverse=True)
+        # md_main_table = sorted(md_main_table, key=itemgetter(4), reverse=True)
 
         sep = ' | '
         md_main_table_string = ''

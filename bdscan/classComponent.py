@@ -8,8 +8,8 @@ from bdscan import utils
 
 class Component:
     md_comp_vulns_hdr = \
-        "\n| Parent | Child Component | Vulnerability | Score |  Policy Violated | Description | " \
-        "Direct Dep Changed |\n| --- | --- | --- | --- | --- | --- | --- |\n"
+        "\n| Parent | Child Component | Vulnerability | Score |  Policy Violated | Description |\n" \
+        "| --- | --- | --- | --- | --- | --- |\n"
 
     def __init__(self, compid, name, version, ns):
         self.ns = ns
@@ -259,7 +259,7 @@ class Component:
     #     return "Unknown", 0
 
     def md_summary_table_row(self):
-        # | Direct Dependency | Changed | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns
+        # | Direct Dependency | Total Vulns | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns
         # | Max Indirect Vuln Severity | Upgrade to |",
         if self.inbaseline:
             changed = 'No'
@@ -267,12 +267,13 @@ class Component:
             changed = 'Yes'
         table = [
             f"{self.name}/{self.version}",
-            changed,
+            f"{len(self.vulns.keys()) + len(self.childvulns.keys())}",
             f"{len(self.vulns.keys())}",
             f"{self.maxvulnscore}",
             f"{len(self.childvulns.keys())}",
             f"{self.maxchildvulnscore}",
-            f"{self.goodupgrade}"
+            f"{self.goodupgrade}",
+            # changed,
         ]
         return table
 
