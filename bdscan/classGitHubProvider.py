@@ -313,9 +313,12 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         commit = repo.get_commit('HEAD')
         globals.printdebug(commit)
 
-        if self.github_event_name == 'push' and commit.commit.message.find('Synopsys Black Duck Auto Pull Request') > 0:
+        # if self.github_event_name == 'push' and commit.commit.message.find('Synopsys Black Duck Auto Pull Request') > 0:
+        m = re.search('Merge pull request #[0-9]* from .*/.*-snps-fix-pr-', commit.commit.message)
+        n = re.search('Black Duck: Upgrade', commit.commit.message)
+        if m and n:
             # Check if this commit is from a previous run of this action and skip if so
-            globals.printdebug(f"DEBUG: Comment {commit.commit.message} encountered - will skip scan on push")
+            globals.printdebug(f"DEBUG: Comment {commit.commit.message} encountered - will skip scan")
             return False
 
         found = False

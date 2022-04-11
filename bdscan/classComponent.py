@@ -8,7 +8,7 @@ from bdscan import utils
 
 class Component:
     md_comp_vulns_hdr = \
-        "\n| Parent | Child Component | Vulnerability | Score |  Policy Violated | Description |\n" \
+        "\n| Direct Dependency | Child Component | Vulnerability | Score |  Policy Violated | Description |\n" \
         "| --- | --- | --- | --- | --- | --- |\n"
 
     def __init__(self, compid, name, version, ns):

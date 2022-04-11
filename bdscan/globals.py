@@ -1,4 +1,4 @@
-scan_utility_version = '1.0.14'
+scan_utility_version = '1.0.15'
 detect_jar = "/tmp/synopsys-detect.jar"
 # workflow_script = "/Users/mbrad/working/blackduck-scan-action/blackduck-rapid-scan-to-github.py"
 # detect_jar = "./synopsys-detect.jar"
@@ -35,7 +35,7 @@ results = []
 fix_pr_data = dict()
 rscan_items = []
 
-comment_on_pr_header = "Synopsys Black Duck - Vulnerabilities Reported"
+comment_on_pr_header = "Synopsys Black Duck - Security Policy Violations"
 
 github_token = ''
 github_repo = ''

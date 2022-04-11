@@ -16,13 +16,17 @@ from bdscan import utils, globals
 
 class ComponentList:
     md_directdeps_header = \
-        f"\n## SUMMARY Direct Dependencies with vulnerabilities:\n\n" \
+        f"\nSynopsys Black has reported security policy violations. The summary table shows the list of direct" \
+        f"dependencies with violations, including counts of vulnerabilities within the dependency and within the " \
+        f"children (transitive dependencies).\n\n" \
+        f"For each direct dependency, the vulnerabilities which violate policies are listed.\n" \
+        f"## SUMMARY: Direct Dependencies with security Policy Violations:\n\n" \
         f"| Direct Dependency | Total Vulns | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns | " \
         f"Max Indirect Vuln Severity | Upgrade to |\n| --- | --- | --- | --- | --- | --- | --- |\n"
 
     md_comp_lic_hdr = \
         "\n## SUMMARY License violations:\n\n" \
-        "| Parent | Child Component | License | Policy Violated |\n" \
+        "| Direct Dependency | Child Component | License | Policy Violated |\n" \
         "| --- | --- | --- | --- |\n"
 
     def __init__(self):
@@ -458,7 +462,14 @@ class ComponentList:
             if comp.get_num_vulns() > 0:
                 md_main_table.append(comp.md_summary_table_row())
 
-            md_comp_data_string += f"\n### Direct Dependency: {comp.name}/{comp.version}" + comp.md_table()
+            md_comp_data_string += f"\n### Direct Dependency: {comp.name}/{comp.version}\n" \
+                                   f"Upgrade to version {comp.goodupgrade} to address policy violations.\n"
+
+            if len(comp.projfiles) > 0:
+                md_comp_data_string += f"(This component is defined in the package manager config file " \
+                                       f"'{comp.projfiles[0]}')\n"
+
+            md_comp_data_string += comp.md_table()
 
             md_lic_table_string += comp.md_lic_table()
 
@@ -479,7 +490,9 @@ class ComponentList:
             md_comments += self.md_comp_lic_hdr + md_lic_table_string
 
         if len(md_main_table) > 0:
-            md_comments += '\n\nVulnerable Direct Dependencies listed below:\n\n' + md_comp_data_string
+            md_comments += '\n\nDirect Dependencies with security policy vulnerabilities are listed below showing ' \
+                           'the associated vulnerabilities in the dependency and its children (transitive ' \
+                           'dependencies):\n\n' + md_comp_data_string
 
         return md_comments
 
