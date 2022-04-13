@@ -485,10 +485,10 @@ def main_process(output, runargs):
                 print('BD-Scan-Action: Created comment on existing pull request')
             else:
                 print('BD-Scan-Action: ERROR: Unable to create comment on existing pull request')
-                ret_status = False
+                status_ok = False
         else:
             print('BD-Scan-Action: No upgrades available for Comment on PR - skipping')
-            ret_status = True
+            status_ok = True
 
         globals.scm_provider.set_commit_status(status_ok)
 
