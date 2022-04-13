@@ -16,17 +16,16 @@ from bdscan import utils, globals
 
 class ComponentList:
     md_directdeps_header = \
-        f"\nSynopsys Black has reported security policy violations. The summary table shows the list of direct" \
+        f"\nSynopsys Black Duck has reported security policy violations. The summary table shows the list of direct " \
         f"dependencies with violations, including counts of vulnerabilities within the dependency and within the " \
         f"children (transitive dependencies).\n\n" \
-        f"For each direct dependency, the vulnerabilities which violate policies are listed.\n" \
         f"## SUMMARY: Direct Dependencies with security Policy Violations:\n\n" \
         f"| Direct Dependency | Total Vulns | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns | " \
         f"Max Indirect Vuln Severity | Upgrade to |\n| --- | --- | --- | --- | --- | --- | --- |\n"
 
     md_comp_lic_hdr = \
         "\n## SUMMARY License violations:\n\n" \
-        "| Direct Dependency | Child Component | License | Policy Violated |\n" \
+        "| Direct Dependency | Affected Component | License | Policy Violated |\n" \
         "| --- | --- | --- | --- |\n"
 
     def __init__(self):
@@ -463,11 +462,12 @@ class ComponentList:
                 md_main_table.append(comp.md_summary_table_row())
 
             md_comp_data_string += f"\n### Direct Dependency: {comp.name}/{comp.version}\n" \
-                                   f"Upgrade to version {comp.goodupgrade} to address policy violations.\n"
+                                   f"Upgrade direct dependency '{comp.name}' to version {comp.goodupgrade} to address " \
+                                   f"security policy violations in this dependency and all its children " \
+                                   f"(transitive dependencies)."
 
             if len(comp.projfiles) > 0:
-                md_comp_data_string += f"(This component is defined in the package manager config file " \
-                                       f"'{comp.projfiles[0]}')\n"
+                md_comp_data_string += f"(defined in the package manager config file '{comp.projfiles[0]}')\n"
 
             md_comp_data_string += comp.md_table()
 

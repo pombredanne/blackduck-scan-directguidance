@@ -186,6 +186,8 @@ The following YAML file shows the usage of the scan action for multiple workflow
           url: ${{ secrets.BLACKDUCK_URL }}
           token: ${{ secrets.BLACKDUCK_API_TOKEN }}
           mode: intelligent
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
           
       # Runs a Black Duck rapid scan for pull request/commit/push
       - name: Run Black Duck security scan on PR/commit/push
