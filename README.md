@@ -25,16 +25,17 @@ Follow these quick start steps to implement this utility in a GitHub repository 
    1. Use `Manage-->Policy Management`
    2. Ensure `Scan Mode` is set to `Rapid`
    3. Add a `Component Conditions` check for vulnerabilities (for example `Highest Vulnerability Score >= 7.0`)
-3. Add a new Action in your GitHub repository:
+3. Create a new Action in your GitHub repository:
    1. Select `Actions` tab
-   2. Select `set up a workflow yourself`
-   3. Delete the entire `jobs:` section in the YAML and replace with relevant `jobs:` section from the example - see next step
+   2. If no Actions defined, then select `set up a workflow yourself` or select `New Workflow` to add a new Action
+   3. Delete the entire `jobs:` section in the YAML and replace with relevant `jobs:` section for this Action - see next step
 4. Check the package managers used in your repository:
-   1. If only primary package managers are used (npm, lerna, yarn, pnpm, nuget, maven) then use the YAML for primary package managers shown at the end of this document
+   1. If only primary package managers are used (npm, lerna, yarn, pnpm, nuget, maven) then use the [YAML for primary package managers](#Overall-Example-Yaml:-Primary-Package-Managers) below
    2. If one or more secondary package managers are used (including Conan, Conda, Dart, GoLang, Hex, Pypi) then use the YAML for secondary package managers shown at the end of this document
-5. Commit the YAML file (note that the Action should run due to the commit of a new file, but there will be no security scan as the package manager file was not changed)
-6. 
-7. 
+5. OPTIONAL The Black Duck project and version names used for the scan will be extracted from Git by default; if you want to define specific project and version names see the answer in the FAQ section below
+6. Commit the YAML file (note that the Action will run due to the commit of a new file, but there will be no security scan as the package manager file was not changed)
+7. Manually run the first intelligent (full) scan by selecting `Actions-->Select your new workflow-->Click on Run workflow option`
+8. Thereafter, on a Pull Request or Commit/push to the master/main branch where the package manager config file is changed, the Action should scan for security policy violations and update the comments or create Fix PRs
 
 ## Supported Technologies
 
@@ -203,65 +204,7 @@ The following YAML extract will add the scan utility as a step running as a pyth
 For questions and comments, please contact us via the [Black Duck Integrations Forum](https://community.synopsys.com/s/topic/0TO34000000gGZnGAM/black-duck-integrations).
 Issues can also be raised in GitHub.
 
-# FAQs
-## How to set the BD project/version names in scans
-The project and version names are not required for Rapid scans unless you want to compare the scan against a previous Full scan.
-If so, use the `detect_opts` paramater to specify additional scan arguments, for example:
-```yaml
-    - name: Black Duck security scan
-      uses: matthewb66/blackduck-scan-directguidance@v4
-      with:
-        url: ${{ secrets.BLACKDUCK_URL }}
-        token: ${{ secrets.BLACKDUCK_API_TOKEN }}
-        upgrade_major: true
-        detect_opts: detect.project.name=MYPROJECT,detect.project.version.name=MYVERSION
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-```
-
-## The scan is empty
-Black Duck Rapid scan looks for supported package manager config files in the top-level folder of the repo.
-If your project only has config files in sub-folders, use the parameter `detect_opts` to specify the scan option `detect.detector.search.depth=1`. Change the depth depending on the folder depth to traverse (a value of 1 would indicate 1 level of sub-folders).
-
-## Cannot connect to Black Duck server due to certificate issues
-Set the parameter `trustcert` to `true` to accept the unsigned server certificate
-
-## How to output SARIF and Fix PR or Comment on PR operation modes together
-By default the action event-type defines what operation mode will be run.
-Specifying the paramater `sarif` will stop the other operation modes from running.
-If you wish to output SARIF in addition to comment on PR in the same step, use the following step logic:
-
-```yaml
-    - name: Black Duck security scan for Pull Request
-      if: ${{github.event_name == 'pull_request'}}
-      uses: matthewb66/blackduck-scan-directguidance@v4
-      with:
-        url: ${{ secrets.BLACKDUCK_URL }}
-        token: ${{ secrets.BLACKDUCK_API_TOKEN }}
-        comment_on_pr: true
-        upgrade_major: true
-        sarif: blackduck-sarif.json  
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-```
-
-If you wish to output SARIF in addition to fix PR in the same step, use the following step logic:
-
-```yaml
-    - name: Black Duck security scan for Pull Request
-      if: ${{github.event_name == 'push'}}
-      uses: matthewb66/blackduck-scan-directguidance@v4
-      with:
-        url: ${{ secrets.BLACKDUCK_URL }}
-        token: ${{ secrets.BLACKDUCK_API_TOKEN }}
-        fix_pr: true
-        upgrade_major: true
-        sarif: blackduck-sarif.json  
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-```
-
-## Overall Example Yaml - Primary Package Managers
+#Overall Example Yaml: Primary Package Managers
 
 The following YAML file shows the usage of the scan action for multiple workflows within an Action including the ability to run a full (intelligent) scan manually:
 
@@ -290,19 +233,79 @@ The following YAML file shows the usage of the scan action for multiple workflow
         if: ${{github.event_name == 'workflow_dispatch'}}
         uses: matthewb66/blackduck-scan-directguidance@v4
         with:
-          url: ${{ secrets.BLACKDUCK_URL }}
-          token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+          bd_url: ${{ secrets.BLACKDUCK_URL }}
+          bd_token: ${{ secrets.BLACKDUCK_API_TOKEN }}
           mode: intelligent
         env:
           GITHUB_TOKEN: ${{ github.token }}
           
       # Runs a Black Duck rapid scan for pull request/commit/push
       - name: Run Black Duck security scan on PR/commit/push
+        if: ${{github.event_name != 'workflow_dispatch'}}
         uses: matthewb66/blackduck-scan-directguidance@v4
         with:
-          url: ${{ secrets.BLACKDUCK_URL }}
-          token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+          bd_url: ${{ secrets.BLACKDUCK_URL }}
+          bd_token: ${{ secrets.BLACKDUCK_API_TOKEN }}
         env:
           # Pass the GitHub token to the script in order to create PRs
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
 ```
+
+# FAQs
+## How to set the BD project/version names in scans
+The project and version names are not required for Rapid scans unless you want to compare the scan against a previous Full scan.
+If so, use the `detect_opts` paramater to specify additional scan arguments, for example:
+```yaml
+    - name: Black Duck security scan
+      uses: matthewb66/blackduck-scan-directguidance@v4
+      with:
+        bd_url: ${{ secrets.BLACKDUCK_URL }}
+        bd_token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+        upgrade_major: true
+        detect_opts: detect.project.name=MYPROJECT,detect.project.version.name=MYVERSION
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+```
+
+## The scan is empty
+Black Duck Rapid scan looks for supported package manager config files in the top-level folder of the repo.
+If your project only has config files in sub-folders, use the parameter `detect_opts` to specify the scan option `detect.detector.search.depth=1`. Change the depth depending on the folder depth to traverse (a value of 1 would indicate 1 level of sub-folders).
+
+## Cannot connect to Black Duck server due to certificate issues
+Set the parameter `trustcert` to `true` to accept the unsigned server certificate
+
+## How to output SARIF and Fix PR or Comment on PR operation modes together
+By default the action event-type defines what operation mode will be run.
+Specifying the paramater `sarif` will stop the other operation modes from running.
+If you wish to output SARIF in addition to comment on PR in the same step, use the following step logic:
+
+```yaml
+    - name: Black Duck security scan for Pull Request
+      if: ${{github.event_name == 'pull_request'}}
+      uses: matthewb66/blackduck-scan-directguidance@v4
+      with:
+        bd_url: ${{ secrets.BLACKDUCK_URL }}
+        bd_token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+        comment_on_pr: true
+        upgrade_major: true
+        sarif: blackduck-sarif.json  
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+```
+
+If you wish to output SARIF in addition to fix PR in the same step, use the following step logic:
+
+```yaml
+    - name: Black Duck security scan for Pull Request
+      if: ${{github.event_name == 'push'}}
+      uses: matthewb66/blackduck-scan-directguidance@v4
+      with:
+        bd_url: ${{ secrets.BLACKDUCK_URL }}
+        bd_token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+        fix_pr: true
+        upgrade_major: true
+        sarif: blackduck-sarif.json  
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+```
+
