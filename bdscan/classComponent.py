@@ -3,7 +3,7 @@ import os
 import semver
 from operator import itemgetter
 
-from bdscan import utils
+from bdscan import utils, globals
 
 
 class Component:
@@ -269,11 +269,13 @@ class Component:
         #     changed = 'No'
         # else:
         #     changed = 'Yes'
+        upg = self.goodupgrade
         if self.goodupgrade == '':
             if globals.args.upgrade_major:
                 upg = 'No Upgrade Available'
             else:
                 upg = 'No Minor Upgrade Available'
+
         table = [
             f"{self.name}/{self.version}",
             f"{len(self.vulns.keys()) + len(self.childvulns.keys())}",

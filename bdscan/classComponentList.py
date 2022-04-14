@@ -471,14 +471,14 @@ class ComponentList:
                                        f"address security policy violations in this dependency and all its child " \
                                        f"(transitive) dependencies."
             elif not globals.args.upgrade_major:
-                md_comp_data_string += f"No minor upgrade available (within the same current major version) - " \
+                md_comp_data_string += f"No minor upgrade available (within the same current major version); " \
                                        f"consider setting the --upgrade_major option to look for upgrades in " \
                                        f"future versions."
             elif globals.args.upgrade_major:
                 md_comp_data_string += f"No upgrade available."
 
             if len(comp.projfiles) > 0:
-                md_comp_data_string += f"\nThis component is defined in the package manager config file " \
+                md_comp_data_string += f" This component is defined in the package manager config file " \
                                        f"'{comp.projfiles[0]}'\n"
 
             md_comp_data_string += comp.md_table()
