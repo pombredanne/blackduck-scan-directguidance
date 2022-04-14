@@ -135,5 +135,5 @@ class NugetComponent(classComponent.Component):
         return files_to_patch
 
     @staticmethod
-    def supports_direct_upgrades(self):
+    def supports_direct_upgrades():
         return True

@@ -227,5 +227,5 @@ class MavenComponent(classComponent.Component):
             return arr[0], arr[1], arr[2]
 
     @staticmethod
-    def supports_direct_upgrades(self):
+    def supports_direct_upgrades():
         return True

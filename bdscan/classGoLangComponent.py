@@ -58,5 +58,5 @@ class GoLangComponent(classComponent.Component):
         return -1
 
     @staticmethod
-    def supports_direct_upgrades(self):
+    def supports_direct_upgrades():
         return False

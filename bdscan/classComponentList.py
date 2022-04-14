@@ -506,6 +506,6 @@ class ComponentList:
             print(f'- {comp.name}/{comp.version}: {upg}')
         print('------------------------------------------------------------------------------------\n')
 
-    @staticmethod
-    def supports_direct_upgrades(self):
-        return False
+    # @staticmethod
+    # def supports_direct_upgrades():
+    #     return False
