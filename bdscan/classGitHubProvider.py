@@ -54,6 +54,8 @@ class GitHubProvider(classSCMProvider.SCMProvider):
                 globals.args.comment_on_pr = True
             elif self.github_event_name == 'push':
                 globals.args.fix_pr = True
+            elif self.github_event_name == 'workflow_dispatch':
+                return True
             else:
                 return False
         elif self.github_event_name is not None and self.github_event_name != '':
@@ -175,7 +177,7 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         ref = repo.get_git_ref(self.github_ref[5:].replace("/merge", "/head"))
         globals.printdebug(ref)
 
-        github_sha = ref.object.sha
+        # github_sha = ref.object.sha
 
         pull_number_for_sha = ref.ref.split('/')[2]
         globals.printdebug(f"DEBUG: Pull request #{pull_number_for_sha}")
@@ -273,11 +275,11 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         ref = repo.get_git_ref(self.github_ref[5:].replace("/merge", "/head"))
         globals.printdebug(ref)
 
-        github_sha = ref.object.sha
+        # github_sha = ref.object.sha
 
-        pulls = repo.get_pulls(state='open', sort='created', base=repo.default_branch, direction="desc")
-        pr = None
-        pr_commit = None
+        # pulls = repo.get_pulls(state='open', sort='created', base=repo.default_branch, direction="desc")
+        # pr = None
+        # pr_commit = None
         globals.printdebug(f"DEBUG: Pull requests:")
 
         pull_number_for_sha = None
@@ -285,11 +287,11 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         if m:
             pull_number_for_sha = int(m.group(1))
 
-        if globals.debug: print(f"DEBUG: Pull request #{pull_number_for_sha}")
+        globals.printdebug(f"DEBUG: Pull request #{pull_number_for_sha}")
 
-        if pull_number_for_sha == None:
-            print(
-                f"ERROR: Unable to find pull request #{pull_number_for_sha}, must be operating on a push or other event")
+        if pull_number_for_sha is None:
+            print(f"ERROR: Unable to find pull request #{pull_number_for_sha}, must be operating on a push or "
+                  f"other event")
             sys.exit(1)
 
         pr = repo.get_pull(pull_number_for_sha)
@@ -313,7 +315,8 @@ class GitHubProvider(classSCMProvider.SCMProvider):
         commit = repo.get_commit('HEAD')
         globals.printdebug(commit)
 
-        # if self.github_event_name == 'push' and commit.commit.message.find('Synopsys Black Duck Auto Pull Request') > 0:
+        # if self.github_event_name == 'push' and commit.commit.message.find('Synopsys Black Duck Auto Pull
+        # Request') > 0:
         m = re.search('Merge pull request #[0-9]* from .*/.*-snps-fix-pr-', commit.commit.message)
         n = re.search('Black Duck: Upgrade', commit.commit.message)
         if m and n:
@@ -361,4 +364,3 @@ class GitHubProvider(classSCMProvider.SCMProvider):
             pull_requests.append(pull.title)
 
         return pull_requests
-

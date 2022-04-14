@@ -1,7 +1,6 @@
 import re
 import os
 # import shutil
-import sys
 import tempfile
 import hashlib
 # import sys
@@ -62,7 +61,7 @@ class ComponentList:
         elif ns == 'dart':
             component = classDartComponent.DartComponent(compid, arr[1], arr[2], ns)
         else:
-            component = classComponent.Component(compid, arr[1], arr[2], ns)
+            # component = classComponent.Component(compid, arr[1], arr[2], ns)
             raise ValueError(f'Unsupported package manager {ns}')
         self.components.append(component)
         self.compids.append(component.compid)
@@ -96,15 +95,15 @@ class ComponentList:
         bd_output_path = 'upgrade-tests'
 
         detect_connection_opts = [
-            f'--blackduck.url={globals.args.url}',
-            f'--blackduck.api.token={globals.args.token}',
+            f'--blackduck.url={globals.args.bd_url}',
+            f'--blackduck.api.token={globals.args.bd_token}',
             "--detect.blackduck.scan.mode=RAPID",
             # "--detect.detector.buildless=true",
             # detect_connection_opts.append("--detect.maven.buildless.legacy.mode=false")
             f"--detect.output.path={bd_output_path}",
             "--detect.cleanup=false"
         ]
-        if globals.args.trustcert:
+        if globals.args.bd_trustcert:
             detect_connection_opts.append('--blackduck.trust.cert=true')
 
         max_upgrade_count = 0
@@ -126,8 +125,8 @@ class ComponentList:
                 # Do not process components in package managers not supported by direct upgrade guidance, but use
                 # regular upgrade guidance if available
                 if not comp.supports_direct_upgrades():
-                    if globals.debug: print(f"DEBUG: Component {comp.name} via package manager {comp.pm} does not"
-                                            "support direct upgrades, skipping")
+                    globals.printdebug(f"DEBUG: Component {comp.name} via package manager {comp.pm} does not"
+                                       f"support direct upgrades, skipping")
                     if comp.upgradeguidance and comp.upgradeguidance[0]:
                         comp.goodupgrade = comp.upgradeguidance[0]
                     elif comp.upgradeguidance and comp.upgradeguidance[1]:
@@ -275,13 +274,13 @@ class ComponentList:
                         desc = desc[:196]
                         desc += ' ...'
                     name = vuln['name']
-                    link = f"{globals.args.url}/api/vulnerabilities/{name}/overview"
+                    link = f"{globals.args.bd_url}/api/vulnerabilities/{name}/overview"
                     vulnname = f'<a href="{link}" target="_blank">{name}</a>'
 
-                    if comp.inbaseline:
-                        changed = 'No'
-                    else:
-                        changed = 'Yes'
+                    # if comp.inbaseline:
+                    #     changed = 'No'
+                    # else:
+                    #     changed = 'Yes'
                     vuln_item = [
                             f"{parent_name}/{parent_ver}",
                             f"{child_name}/{child_ver}",
@@ -306,12 +305,12 @@ class ComponentList:
                         print(f"lic={lic}")
                         if lic['name'] in existing_lic_violations:
                             continue
-                        #if max_vuln_severity < vuln['overallScore']:
+                        # if max_vuln_severity < vuln['overallScore']:
                         #    max_vuln_severity = vuln['overallScore']
                     elif child:
                         if lic['name'] in existing_lic_violations_children:
                             continue
-                        #if max_vuln_severity_children < vuln['overallScore']:
+                        # if max_vuln_severity_children < vuln['overallScore']:
                         #    max_vuln_severity_children = vuln['overallScore']
                         parent_name = comp.name
                         parent_ver = comp.version
@@ -320,13 +319,13 @@ class ComponentList:
                     name = lic['name']
                     # TODO: This link is not user friendly; follow to generate correct link
                     link = lic['_meta']['href']
-                    #link = f"{globals.args.url}/api/vulnerabilities/{name}/overview"
+                    # link = f"{globals.args.bd_url}/api/vulnerabilities/{name}/overview"
                     licname = f'<a href="{link}" target="_blank">{name}</a>'
 
-                    if comp.inbaseline:
-                        changed = 'No'
-                    else:
-                        changed = 'Yes'
+                    # if comp.inbaseline:
+                    #     changed = 'No'
+                    # else:
+                    #     changed = 'Yes'
 
                     lic_item = [
                         f"{parent_name}/{parent_ver}",
@@ -337,10 +336,10 @@ class ComponentList:
                     ]
                     if parent and lic['name'] not in existing_lic_violations:
                         comp.add_lic_violation(name, lic_item)
-                        #comp.set_data('maxvulnscore', max_vuln_severity)
+                        # comp.set_data('maxvulnscore', max_vuln_severity)
                     if child and lic['name'] not in existing_lic_violations_children:
                         comp.add_child_lic_violation(name, lic_item)
-                        #comp.set_data('maxchildvulnscore', max_vuln_severity_children)
+                        # comp.set_data('maxchildvulnscore', max_vuln_severity_children)
 
             # Sort the tables
             # vuln_list = sorted(vuln_list, key=itemgetter(3), reverse=True)
@@ -462,8 +461,8 @@ class ComponentList:
                 md_main_table.append(comp.md_summary_table_row())
 
             md_comp_data_string += f"\n### Direct Dependency: {comp.name}/{comp.version}\n" \
-                                   f"Upgrade direct dependency '{comp.name}' to version {comp.goodupgrade} to address " \
-                                   f"security policy violations in this dependency and all its children " \
+                                   f"Upgrade direct dependency '{comp.name}' to version {comp.goodupgrade} to " \
+                                   f"address security policy violations in this dependency and all its children " \
                                    f"(transitive dependencies)."
 
             if len(comp.projfiles) > 0:
@@ -486,7 +485,7 @@ class ComponentList:
         if len(md_main_table) > 0:
             md_comments += self.md_directdeps_header + md_main_table_string
 
-        if (len(md_lic_table_string) > 1):
+        if len(md_lic_table_string) > 1:
             md_comments += self.md_comp_lic_hdr + md_lic_table_string
 
         if len(md_main_table) > 0:
@@ -507,5 +506,6 @@ class ComponentList:
             print(f'- {comp.name}/{comp.version}: {upg}')
         print('------------------------------------------------------------------------------------\n')
 
+    @staticmethod
     def supports_direct_upgrades(self):
         return False

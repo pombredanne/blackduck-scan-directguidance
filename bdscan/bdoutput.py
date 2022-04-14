@@ -104,8 +104,8 @@ def process_rapid_scan(rapid_scan_data, bdio_graph, bdio_projects):
 
         dep_vulnerable = False
         # TODO: Revisit license violations
-        if len(item['policyViolationVulnerabilities']) > 0:
         # if len(item['policyViolationVulnerabilities']) > 0 or len(item['policyViolationLicenses']) > 0:
+        if len(item['policyViolationVulnerabilities']) > 0:
             dep_vulnerable = True
 
         globals.printdebug(f"DEBUG: Component: {item['componentIdentifier']}")

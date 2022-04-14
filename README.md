@@ -14,6 +14,28 @@ Black Duck RAPID scan policies are used to determine vulnerabilities to be repor
 
 This script is provided under an OSS license (specified in the LICENSE file) and has been developed by Synopsys field engineers as a contribution to the Synopsys user community. Please direct questions and comments to the [Black Duck Integrations Forum](https://community.synopsys.com/s/topic/0TO34000000gGZnGAM/black-duck-integrations) in the Synopsys user community.
 
+## Quick Start Guide
+
+Follow these quick start steps to implement this utility in a GitHub repository as a GitHub Action.
+
+1. Add 2 GitHub Repository secrets (Settings-->Secrets-->Actions:
+   1. `BLACKDUCK_URL` with the Black Duck server URL
+   2. `BLACKDUCK_API_TOKEN` with the Black Duck API token
+2. Create at least 1 security policy for RAPID scan in the Black Duck server:
+   1. Use `Manage-->Policy Management`
+   2. Ensure `Scan Mode` is set to `Rapid`
+   3. Add a `Component Conditions` check for vulnerabilities (for example `Highest Vulnerability Score >= 7.0`)
+3. Add a new Action in your GitHub repository:
+   1. Select `Actions` tab
+   2. Select `set up a workflow yourself`
+   3. Delete the entire `jobs:` section in the YAML and replace with relevant `jobs:` section from the example - see next step
+4. Check the package managers used in your repository:
+   1. If only primary package managers are used (npm, lerna, yarn, pnpm, nuget, maven) then use the YAML for primary package managers shown at the end of this document
+   2. If one or more secondary package managers are used (including Conan, Conda, Dart, GoLang, Hex, Pypi) then use the YAML for secondary package managers shown at the end of this document
+5. Commit the YAML file (note that the Action should run due to the commit of a new file, but there will be no security scan as the package manager file was not changed)
+6. 
+7. 
+
 ## Supported Technologies
 
 The utility supports a primary list of package managers:
@@ -34,26 +56,26 @@ This deployment supports identifying vulnerable direct dependencies with transit
 - Hex
 - Pypi
 
-The utility can support multiple package managers in a single project, although you need to ensure you choose the correct mode (primary or secondary package managers) based on the full list. For example, if you have a project using Maven, npm and Pypi, you will need to use the secondary package manager operation mode throughout, unless you specify Synopsys Detect options to exclude the secondary package managers (in this case pypi).
+The utility can support multiple package managers in a single project, although you need to ensure you choose the correct deployment mode (for primary or secondary package managers) based on the full list. For example, if you have a project using `Maven`, `npm` and `Pypi`, you will need to use the secondary package manager operation mode throughout (installing the utility as a pip package), unless you exclude the secondary package managers by specifying Synopsys Detect options (in this case `pypi`).
 
 The following table shows the functionality available for the supported package managers:
 
-| Package Manager | Comment on Pull Request | Create Fix PRs for vulnerable direct dependencies | Provide upgrade guidance including transitive dependencies | Output SARIF for code security check |
+| Package Manager | Comment on Pull Request | Create Fix PRs for vulnerable direct dependencies | Output SARIF for code security check | Run intelligent (full) scan |
 |-----|---|---|---|---|
-| npm    | yes | yes | yes | yes | 
-| lerna  | yes | yes | yes | yes |  
-| yarn   | yes | yes | yes | yes | 
+| | Event Type: _pull_request_ | Event Type: _push_ | Event Types: _all_ | Event Types: _all_ |
+| | Scan Type: _rapid_ | Scan Type: _rapid_ | Scan Type: _rapid_ | Scan Type: _intelligent_ |
+| npm    | yes | yes | yes | yes |
+| lerna  | yes | yes | yes | yes |
+| yarn   | yes | yes | yes | yes |
 | pnpm   | yes | yes | yes | yes |
 | nuget  | yes | yes | yes | yes |
 | maven  | yes | yes | yes | yes |
-| conan  | yes |  |  | yes |
-| conda  | yes |  |  | yes |
-| dart   | yes |  |  | yes |
-| golang | yes |  |  | yes |
-| hex    | yes |  |  | yes |
-| pypi   | yes |  |  | yes |
-|  |  |  |  |  |
-| Event Type | pull_request | push | all | all |
+| conan  | yes |  | yes | yes |
+| conda  | yes |  | yes | yes |
+| dart   | yes |  | yes | yes |
+| golang | yes |  | yes | yes |
+| hex    | yes |  | yes | yes |
+| pypi   | yes |  | yes | yes |
 
 # Configuration
 
@@ -154,52 +176,6 @@ The Black Duck Scanning action has a number of input parameters that can be pass
 | no_files_check      | false                | Skip the validation of the changed files - by default this check will terminate the action if no package manager config files have been changed in the commit/pull request                                             |
 | detect_opts         | N/A                  | Add Synopsys Detect scan options in a comma-delimited list (e.g. `detect.detector.buildless=true,detect.maven.buildless.legacy.mode=false`)                                                                            | 
 
-## Overall Example Yaml - Primary Package Managers
-
-The following YAML file shows the usage of the scan action for multiple workflows within an Action including the ability to run a full (intelligent) scan manually:
-
-```yaml
-  name: Scan a project with Black Duck
-  
-  on:
-    push:
-      branches: [ main ]
-    pull_request:
-      branches: [ main ]
-    workflow_dispatch:
-  
-  jobs:
-    blackduck:
-      runs-on: ubuntu-latest
-      steps:
-      
-      - name: Checkout the code
-        uses: actions/checkout@v2
-        
-      # Runs a Black Duck intelligent scan manually
-      # This will run a "full" or "intelligent" scan, logging new components in the Black Duck Hub server
-      # in order to provide real time notifications when new vulnerabilities are reported.
-      - name: Run Baseline Black Duck Scan (manual, workflow dispatch)
-        if: ${{github.event_name == 'workflow_dispatch'}}
-        uses: matthewb66/blackduck-scan-directguidance@v4
-        with:
-          url: ${{ secrets.BLACKDUCK_URL }}
-          token: ${{ secrets.BLACKDUCK_API_TOKEN }}
-          mode: intelligent
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          
-      # Runs a Black Duck rapid scan for pull request/commit/push
-      - name: Run Black Duck security scan on PR/commit/push
-        uses: matthewb66/blackduck-scan-directguidance@v4
-        with:
-          url: ${{ secrets.BLACKDUCK_URL }}
-          token: ${{ secrets.BLACKDUCK_API_TOKEN }}
-        env:
-          # Pass the GitHub token to the script in order to create PRs
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
-```
-
 ## Secondary Package Managers - Usage
 
 If you are scanning a project which uses at least one secondary package manager (see list above), then you need to deploy this utility as a Python package.
@@ -283,4 +259,50 @@ If you wish to output SARIF in addition to fix PR in the same step, use the foll
         sarif: blackduck-sarif.json  
       env:
         GITHUB_TOKEN: ${{ github.token }}
+```
+
+## Overall Example Yaml - Primary Package Managers
+
+The following YAML file shows the usage of the scan action for multiple workflows within an Action including the ability to run a full (intelligent) scan manually:
+
+```yaml
+  name: Scan a project with Black Duck
+  
+  on:
+    push:
+      branches: [ main ]
+    pull_request:
+      branches: [ main ]
+    workflow_dispatch:
+  
+  jobs:
+    blackduck:
+      runs-on: ubuntu-latest
+      steps:
+      
+      - name: Checkout the code
+        uses: actions/checkout@v2
+        
+      # Runs a Black Duck intelligent scan manually
+      # This will run a "full" or "intelligent" scan, logging new components in the Black Duck Hub server
+      # in order to provide real time notifications when new vulnerabilities are reported.
+      - name: Run Baseline Black Duck Scan (manual, workflow dispatch)
+        if: ${{github.event_name == 'workflow_dispatch'}}
+        uses: matthewb66/blackduck-scan-directguidance@v4
+        with:
+          url: ${{ secrets.BLACKDUCK_URL }}
+          token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+          mode: intelligent
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          
+      # Runs a Black Duck rapid scan for pull request/commit/push
+      - name: Run Black Duck security scan on PR/commit/push
+        uses: matthewb66/blackduck-scan-directguidance@v4
+        with:
+          url: ${{ secrets.BLACKDUCK_URL }}
+          token: ${{ secrets.BLACKDUCK_API_TOKEN }}
+        env:
+          # Pass the GitHub token to the script in order to create PRs
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}        
 ```

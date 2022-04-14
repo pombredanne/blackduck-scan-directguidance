@@ -196,17 +196,21 @@ class Component:
 
     def shorttext(self):
         if len(self.vulns) > 0 and len(self.childvulns) > 0:
-            shorttext = f"The direct dependency {self.name}/{self.version} has {len(self.vulns)} vulnerabilities " \
+            shorttext = f"The direct dependency '{self.name}/{self.version}' has {len(self.vulns)} vulnerabilities " \
                         f"(max score {self.maxvulnscore}) and {len(self.childvulns)} vulnerabilities in child " \
-                        f"dependencies (max score {self.maxchildvulnscore})."
+                        f"dependencies (max score {self.maxchildvulnscore}) reported by security policy violations."
         elif len(self.vulns) > 0 and len(self.childvulns) == 0:
             shorttext = f"The direct dependency {self.name}/{self.version} has {len(self.vulns)} vulnerabilities " \
-                        f"(max score {self.maxvulnscore})."
+                        f"(max score {self.maxvulnscore})  reported by security policy violations."
         elif len(self.childvulns) > 0:
             shorttext = f"The direct dependency {self.name}/{self.version} has {len(self.childvulns.keys())} " \
-                        f"vulnerabilities in child dependencies (max score {self.maxchildvulnscore})."
+                        f"vulnerabilities in child dependencies (max score {self.maxchildvulnscore})  reported " \
+                        f"by security policy violations."
         else:
             shorttext = ''
+        if shorttext != '' and self.goodupgrade != '':
+            shorttext += f" Upgrade to version '{self.goodupgrade}' to address the reported security policy violations."
+
         return shorttext
 
     def longtext(self):

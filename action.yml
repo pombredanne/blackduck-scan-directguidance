@@ -1,4 +1,4 @@
-name: "Black Duck Scan"
+name: "Black Duck GH Scan Action Directguidance"
 description: "Black Duck Scanning NEW VERSION for GitHub CI/CD Workflows"
 author: "Matthew Brady"
 branding:
@@ -9,13 +9,13 @@ inputs:
     description: "Debugging"
     default: "0"
     required: false
-  url:
+  bd_url:
     description: "Black Duck URL"
     required: true
-  token:
+  bd_token:
     description: "Black Duck API Token"
     required: true
-  trustcert:
+  bd_trustcert:
     description: "Trust Black Duck server certificate"
     required: false
   project:
@@ -30,7 +30,8 @@ inputs:
     required: false
   file:
     description: "Location of the related file in the repository"
-  output:
+    required: false
+  output_folder:
     description: "Directory in which to save the rapid scan output"
     default: "blackduck-output"
     required: false
@@ -41,6 +42,7 @@ inputs:
   comment_on_pr:
     description: "Comment on a pull request"
     default: "false"
+    required: false
   sarif:
     description: "Output file for SARIF"
     required: false
@@ -59,20 +61,20 @@ inputs:
 runs:
   using: "docker"
 #  image: "Dockerfile"
-  image: "docker://ghcr.io/matthewb66/bdghscan2:latest"
+  image: "docker://ghcr.io/matthewb66/bdghdirectscan:latest"
   args:
     - --debug
     - ${{ inputs.debug }}
-    - --url
-    - ${{ inputs.url }}
-    - --token
-    - ${{ inputs.token }}
-    - --trustcert
-    - ${{ inputs.trustcert }}
+    - --bd_url
+    - ${{ inputs.bd_url }}
+    - --bd_token
+    - ${{ inputs.bd_token }}
+    - --bd_trustcert
+    - ${{ inputs.bd_trustcert }}
     - --mode
     - ${{ inputs.mode }}
-    - --output
-    - ${{ inputs.output }}
+    - --output_folder
+    - ${{ inputs.output_folder }}
     - --project
     - ${{ inputs.project }}
     - --version
