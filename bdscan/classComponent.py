@@ -8,7 +8,7 @@ from bdscan import utils
 
 class Component:
     md_comp_vulns_hdr = \
-        "\n| Direct Dependency | Child Component | Vulnerability | Score |  Policy Violated | Description |\n" \
+        "\n| Direct Dependency | Affected Component | Vulnerability | Score |  Policy Violated | Description |\n" \
         "| --- | --- | --- | --- | --- | --- |\n"
 
     def __init__(self, compid, name, version, ns):
@@ -265,10 +265,15 @@ class Component:
     def md_summary_table_row(self):
         # | Direct Dependency | Total Vulns | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns
         # | Max Indirect Vuln Severity | Upgrade to |",
-        if self.inbaseline:
-            changed = 'No'
-        else:
-            changed = 'Yes'
+        # if self.inbaseline:
+        #     changed = 'No'
+        # else:
+        #     changed = 'Yes'
+        if self.goodupgrade == '':
+            if globals.args.upgrade_major:
+                upg = 'No Upgrade Available'
+            else:
+                upg = 'No Minor Upgrade Available'
         table = [
             f"{self.name}/{self.version}",
             f"{len(self.vulns.keys()) + len(self.childvulns.keys())}",
@@ -276,7 +281,7 @@ class Component:
             f"{self.maxvulnscore}",
             f"{len(self.childvulns.keys())}",
             f"{self.maxchildvulnscore}",
-            f"{self.goodupgrade}",
+            f"{upg}",
             # changed,
         ]
         return table

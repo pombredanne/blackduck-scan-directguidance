@@ -16,8 +16,8 @@ from bdscan import utils, globals
 class ComponentList:
     md_directdeps_header = \
         f"\nSynopsys Black Duck has reported security policy violations. The summary table shows the list of direct " \
-        f"dependencies with violations, including counts of vulnerabilities within the dependency and within the " \
-        f"children (transitive dependencies).\n\n" \
+        f"dependencies with violations, including counts of vulnerabilities within the dependency and within its " \
+        f"child (transitive) dependencies.\n\n" \
         f"## SUMMARY: Direct Dependencies with security Policy Violations:\n\n" \
         f"| Direct Dependency | Total Vulns | Num Direct Vulns | Max Direct Vuln Severity | Num Indirect Vulns | " \
         f"Max Indirect Vuln Severity | Upgrade to |\n| --- | --- | --- | --- | --- | --- | --- |\n"
@@ -281,8 +281,13 @@ class ComponentList:
                     #     changed = 'No'
                     # else:
                     #     changed = 'Yes'
+                    if parent_name == '-':
+                        parent = f"{child_name}/{child_ver}"
+                    else:
+                        parent = f"{parent_name}/{parent_ver}"
+
                     vuln_item = [
-                            f"{parent_name}/{parent_ver}",
+                            parent,
                             f"{child_name}/{child_ver}",
                             vulnname,
                             str(vuln['overallScore']),
@@ -460,13 +465,21 @@ class ComponentList:
             if comp.get_num_vulns() > 0:
                 md_main_table.append(comp.md_summary_table_row())
 
-            md_comp_data_string += f"\n### Direct Dependency: {comp.name}/{comp.version}\n" \
-                                   f"Upgrade direct dependency '{comp.name}' to version {comp.goodupgrade} to " \
-                                   f"address security policy violations in this dependency and all its children " \
-                                   f"(transitive dependencies)."
+            md_comp_data_string += f"\n### Direct Dependency: {comp.name}/{comp.version}\n"
+            if comp.goodupgrade != '':
+                md_comp_data_string += f"Upgrade direct dependency '{comp.name}' to version {comp.goodupgrade} to " \
+                                       f"address security policy violations in this dependency and all its child " \
+                                       f"(transitive) dependencies."
+            elif not globals.args.upgrade_major:
+                md_comp_data_string += f"No minor upgrade available (within the same current major version) - " \
+                                       f"consider setting the --upgrade_major option to look for upgrades in " \
+                                       f"future versions."
+            elif globals.args.upgrade_major:
+                md_comp_data_string += f"No upgrade available."
 
             if len(comp.projfiles) > 0:
-                md_comp_data_string += f"(defined in the package manager config file '{comp.projfiles[0]}')\n"
+                md_comp_data_string += f"\nThis component is defined in the package manager config file " \
+                                       f"'{comp.projfiles[0]}'\n"
 
             md_comp_data_string += comp.md_table()
 
