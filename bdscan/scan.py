@@ -148,8 +148,8 @@ def main_process(output, runargs):
             ret_status = True
 
     # Optionally comment on the pull request this is for
+
     if globals.args.comment_on_pr:
-        # status_ok = True
         if len(direct_deps_to_upgrade.components) > 0:
             comment = direct_deps_to_upgrade.get_comments(globals.args.incremental_results)
             if globals.scm_provider.pr_comment(comment):
@@ -163,14 +163,15 @@ def main_process(output, runargs):
             status_ok = True
 
         globals.scm_provider.set_commit_status(status_ok)
+        ret_status = status_ok
 
     if os.path.isdir(globals.args.output_folder) and os.path.isdir(os.path.join(globals.args.output_folder, "runs")):
         shutil.rmtree(globals.args.output_folder, ignore_errors=False, onerror=None)
         print(f'BD-Scan-Action: INFO: Cleaning up folder {globals.args.output_folder}')
 
     if ret_status:
-        print('BD-Scan-Action: Done - SUCCESS')
+        print('BD-Scan-Action: Done - Returning OK')
         sys.exit(0)
     else:
-        print('BD-Scan-Action: Done - ERROR')
+        print('BD-Scan-Action: Done - Returning FAIL')
         sys.exit(1)
