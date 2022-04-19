@@ -12,7 +12,7 @@ setuptools.setup(
     version=globals.scan_utility_version,
     author="Matthew Brady",
     author_email="mbrad@synopsys.com",
-    description="NEW Github Action to scan for SCA using Synopsys Black Duck.",
+    description="NEW Github Action to scan for SCA using Synopsys Black Duck.x",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/matthewb66/blackduck-scan-directguidance",
